@@ -38,33 +38,26 @@ public class AplictService {
     private final ClubIntroRepository clubIntroRepository;
     private final ClubMembersRepository clubMembersRepository;
 
-    /**
-     * 동아리 지원 가능 여부 확인 (ANYONE)
-     */
     @Transactional(readOnly = true)
     public void checkIfCanApply(UUID clubUUID) {
         Profile profile = getAuthenticatedProfile();
 
-        // 이미 지원한 경우 예외 처리
         if (aplictRepository.existsByProfileAndClubUUID(profile, clubUUID)) {
             throw new AplictException(ExceptionType.ALREADY_APPLIED);
         }
 
-        // 이미 동아리 멤버인 경우 예외 처리
         if (clubMembersRepository.existsByProfileAndClubUUID(profile, clubUUID)) {
             throw new AplictException(ExceptionType.ALREADY_MEMBER);
         }
 
         List<Profile> clubMembers = clubMembersRepository.findProfilesByClubUUID(clubUUID);
 
-        // 등록된 전화번호
         for (Profile member : clubMembers) {
             if (profile.getUserHp().equals(member.getUserHp())) {
                 throw new AplictException(ExceptionType.PHONE_NUMBER_ALREADY_REGISTERED);
             }
         }
 
-        // 등록된 학번
         for (Profile member : clubMembers) {
             if (profile.getStudentNumber().equals(member.getStudentNumber())) {
                 throw new AplictException(ExceptionType.STUDENT_NUMBER_ALREADY_REGISTERED);
@@ -74,9 +67,6 @@ public class AplictService {
         log.debug("동아리 지원 가능 - ClubUUID: {}", clubUUID);
     }
 
-    /**
-     * 지원서 작성하기 버튼 (USER)
-     */
     @Transactional(readOnly = true)
     public String getGoogleFormUrlByClubUUID(UUID clubUUID) {
         ClubIntro clubIntro = clubIntroRepository.findByClubUUID(clubUUID)
@@ -91,9 +81,6 @@ public class AplictService {
         return googleFormUrl;
     }
 
-    /**
-     * 동아리 지원서 제출 (USER)
-     */
     public void submitAplict(UUID clubUUID) {
         Profile profile = getAuthenticatedProfile();
 
@@ -111,9 +98,6 @@ public class AplictService {
         log.debug("동아리 지원서 제출 성공 - ClubUUID: {}, Status: {}", clubUUID, AplictStatus.WAIT);
     }
 
-    /**
-     * 인증된 USER 프로필 가져오기
-     */
     private Profile getAuthenticatedProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

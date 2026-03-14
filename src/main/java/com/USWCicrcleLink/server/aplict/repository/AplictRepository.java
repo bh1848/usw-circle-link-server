@@ -4,7 +4,6 @@ import com.USWCicrcleLink.server.aplict.domain.Aplict;
 import com.USWCicrcleLink.server.aplict.domain.AplictStatus;
 import com.USWCicrcleLink.server.club.club.domain.Club;
 import com.USWCicrcleLink.server.profile.domain.Profile;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,12 +15,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface AplictRepository extends JpaRepository<Aplict, Long> ,AplictRepositoryCustom{
+public interface AplictRepository extends JpaRepository<Aplict, Long>, AplictRepositoryCustom {
     List<Aplict> findByProfileProfileId(Long profileId);
 
     Optional<Aplict> findByClub_ClubIdAndAplictUUIDAndChecked(Long clubId, UUID aplictUUID, boolean checked);
 
-    List<Aplict> findByClub_ClubIdAndChecked (Long clubId, boolean checked);
+    List<Aplict> findByClub_ClubIdAndChecked(Long clubId, boolean checked);
 
     Optional<Aplict> findByClub_ClubIdAndAplictUUIDAndCheckedAndAplictStatus(Long clubId, UUID aplictUUID, boolean checked, AplictStatus status);
     List<Aplict> findAllByDeleteDateBefore(LocalDateTime dateTime);

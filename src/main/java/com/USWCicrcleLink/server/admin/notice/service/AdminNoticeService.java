@@ -3,7 +3,11 @@ package com.USWCicrcleLink.server.admin.notice.service;
 import com.USWCicrcleLink.server.admin.admin.domain.Admin;
 import com.USWCicrcleLink.server.admin.notice.domain.Notice;
 import com.USWCicrcleLink.server.admin.notice.domain.NoticePhoto;
-import com.USWCicrcleLink.server.admin.notice.dto.*;
+import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeCreationRequest;
+import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeListResponse;
+import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticePageListResponse;
+import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeUpdateRequest;
+import com.USWCicrcleLink.server.admin.notice.dto.NoticeDetailResponse;
 import com.USWCicrcleLink.server.admin.notice.repository.NoticePhotoRepository;
 import com.USWCicrcleLink.server.admin.notice.repository.NoticeRepository;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
@@ -40,9 +44,6 @@ public class AdminNoticeService {
     private final NoticePhotoRepository noticePhotoRepository;
     private final S3FileUploadService s3FileUploadService;
 
-    /**
-     * 공지사항 리스트 조회 (ADMIN)
-     */
     @Transactional(readOnly = true)
     public AdminNoticePageListResponse getNotices(Pageable pageable) {
         Page<Notice> notices = noticeRepository.findAll(pageable);
@@ -66,9 +67,6 @@ public class AdminNoticeService {
                 .build();
     }
 
-    /**
-     * 공지사항 조회 (ADMIN, USER)
-     */
     @Transactional(readOnly = true)
     public NoticeDetailResponse getNoticeByUUID(UUID noticeUUID) {
         Notice notice = noticeRepository.findByNoticeUUID(noticeUUID)
@@ -91,9 +89,6 @@ public class AdminNoticeService {
         );
     }
 
-    /**
-     * 공지사항 생성 (ADMIN)
-     */
     public List<String> createNotice(AdminNoticeCreationRequest request, List<MultipartFile> noticePhotos) {
         Admin admin = getAuthenticatedAdmin();
 
@@ -105,46 +100,29 @@ public class AdminNoticeService {
                 .build();
         Notice savedNotice = noticeRepository.save(notice);
 
-        // 사진 순서와 파일 개수 검증
         validatePhotoOrdersAndPhotos(request.getPhotoOrders(), noticePhotos);
-
-        // 사진 처리
         List<String> presignedUrls = handleNoticePhotos(savedNotice, noticePhotos, request.getPhotoOrders());
 
         log.info("공지사항 생성 완료 - NoticeID: {}, 첨부된 사진 수: {}", savedNotice.getNoticeId(), noticePhotos == null ? 0 : noticePhotos.size());
         return presignedUrls;
     }
 
-    /**
-     * 공지사항 수정 (ADMIN)
-     */
     public List<String> updateNotice(UUID noticeUUID, AdminNoticeUpdateRequest request, List<MultipartFile> noticePhotos) {
-
-        // 공지사항 조회
         Notice notice = noticeRepository.findByNoticeUUID(noticeUUID)
                 .orElseThrow(() -> new NoticeException(ExceptionType.NOTICE_NOT_EXISTS));
 
         notice.updateTitle(request.getNoticeTitle());
         notice.updateContent(request.getNoticeContent());
 
-        // 기존 사진 삭제
         deleteExistingPhotos(notice);
-
-        // 사진 순서와 파일 개수 검증
         validatePhotoOrdersAndPhotos(request.getPhotoOrders(), noticePhotos);
-
-        // 사진 처리
         List<String> presignedUrls = handleNoticePhotos(notice, noticePhotos, request.getPhotoOrders());
 
         log.info("공지사항 수정 완료 - ID: {}, 첨부된 사진 수: {}", notice.getNoticeId(), noticePhotos == null ? 0 : noticePhotos.size());
         return presignedUrls;
     }
 
-    /**
-     * 공지사항 삭제 (ADMIN)
-     */
     public void deleteNotice(UUID noticeUUID) {
-
         Notice notice = noticeRepository.findByNoticeUUID(noticeUUID)
                 .orElseThrow(() -> new NoticeException(ExceptionType.NOTICE_NOT_EXISTS));
 
@@ -154,31 +132,24 @@ public class AdminNoticeService {
         log.info("공지사항 삭제 완료 - ID: {}", notice.getNoticeId());
     }
 
-    /**
-     * 인증된 ADMIN 정보 가져오기
-     */
     private Admin getAuthenticatedAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
         return adminDetails.admin();
     }
 
-    // 사진 순서와 파일 개수 검증
     private void validatePhotoOrdersAndPhotos(List<Integer> photoOrders, List<MultipartFile> noticePhotos) {
         if (noticePhotos != null && !noticePhotos.isEmpty()) {
-            // 사진과 사진 순서의 개수 일치 확인
             if (photoOrders == null || noticePhotos.size() != photoOrders.size()) {
                 throw new NoticeException(ExceptionType.PHOTO_ORDER_MISMATCH);
             }
 
-            // 사진 개수 제한 확인
             if (noticePhotos.size() > FILE_LIMIT) {
                 throw new NoticeException(ExceptionType.UP_TO_5_PHOTOS_CAN_BE_UPLOADED);
             }
         }
     }
 
-    // 기존 사진 일괄 삭제
     private void deleteExistingPhotos(Notice notice) {
         List<NoticePhoto> existingPhotos = noticePhotoRepository.findByNotice(notice);
         if (existingPhotos.isEmpty()) return;
@@ -193,7 +164,6 @@ public class AdminNoticeService {
         log.debug("공지사항 사진 일괄 삭제 완료 - ID: {}, 삭제된 파일 수: {}", notice.getNoticeId(), fileNames.size());
     }
 
-    // 사진 업로드
     private List<String> handleNoticePhotos(Notice notice, List<MultipartFile> noticePhotos, List<Integer> photoOrders) {
         if (noticePhotos == null || noticePhotos.isEmpty()) return List.of();
 

@@ -49,9 +49,6 @@ public class AdminClubService {
     private final ClubIntroPhotoRepository clubIntroPhotoRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * 메인 페이지(ADMIN) - 동아리 목록 조회
-     */
     @Transactional(readOnly = true)
     public AdminClubPageListResponse getAllClubs(Pageable pageable) {
         Page<AdminClubListResponse> clubs = clubRepository.findAllWithMemberAndLeaderCount(pageable);
@@ -65,9 +62,6 @@ public class AdminClubService {
                 .build();
     }
 
-    /**
-     * 동아리 생성(ADMIN) - 동아리 생성 완료하기
-     */
     public void createClub(AdminClubCreationRequest request) {
         Admin admin = getAuthenticatedAdmin();
 
@@ -89,7 +83,6 @@ public class AdminClubService {
         createClubDefaultData(club);
     }
 
-    // 동아리 생성 - 동아리 생성
     private Club createClubEntity(AdminClubCreationRequest request) {
         Club club = Club.builder()
                 .clubName(request.getClubName())
@@ -103,7 +96,6 @@ public class AdminClubService {
         return clubRepository.save(club);
     }
 
-    // 동아리 생성 - 회장 계정 생성
     private void createLeaderAccount(String leaderAccount, String leaderPw, Club club) {
         Leader leader = Leader.builder()
                 .leaderAccount(leaderAccount)
@@ -116,7 +108,6 @@ public class AdminClubService {
         log.info("회장 계정 생성 성공 - uuid: {}", leader.getLeaderUUID());
     }
 
-    // 동아리 생성 - 기본 동아리 데이터 생성
     private void createClubDefaultData(Club club) {
         createClubMainPhoto(club);
         ClubIntro clubIntro = createClubIntro(club);
@@ -160,7 +151,6 @@ public class AdminClubService {
         log.debug("기본 동아리 소개 사진 5개 생성 완료 - Club ID: {}", clubIntro.getClub().getClubId());
     }
 
-    // 동아리 생성 - 동아리 회장 아이디 중복 확인
     public void validateLeaderAccount(String leaderAccount) {
         if (leaderRepository.existsByLeaderAccount(leaderAccount)) {
             log.warn("동아리 회장 계정 중복 - LeaderAccount: {}", leaderAccount);
@@ -168,7 +158,6 @@ public class AdminClubService {
         }
     }
 
-    // 동아리 생성 - 동아리 이름 중복 확인
     public void validateClubName(String clubName) {
         if (clubRepository.existsByClubName(clubName)) {
             log.warn("동아리명 중복 - ClubName: {}", clubName);
@@ -176,9 +165,6 @@ public class AdminClubService {
         }
     }
 
-    /**
-     * 동아리 삭제(ADMIN) - 동아리 삭제 완료하기
-     */
     @Transactional
     public void deleteClub(UUID clubUUID, AdminPwRequest request) {
         Admin admin = getAuthenticatedAdmin();
@@ -202,9 +188,6 @@ public class AdminClubService {
         }
     }
 
-    /**
-     * 인증된 ADMIN 정보 가져오기
-     */
     private Admin getAuthenticatedAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();

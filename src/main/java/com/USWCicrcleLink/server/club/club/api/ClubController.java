@@ -9,7 +9,11 @@ import com.USWCicrcleLink.server.global.response.ApiResponse;
 import com.USWCicrcleLink.server.club.club.dto.ClubInfoListResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,14 +25,12 @@ public class ClubController {
 
     private final ClubService clubService;
 
-    // 전체 동아리 조회 (모바일)
     @GetMapping
     public ResponseEntity<ApiResponse<List<ClubListResponse>>> getAllClubs() {
         List<ClubListResponse> clubs = clubService.getAllClubs();
         return ResponseEntity.ok(new ApiResponse<>("전체 동아리 조회 완료", clubs));
     }
 
-    // 모바일 기존회원가입시 모든 동아리 정보 출력
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<List<ClubInfoListResponse>>> getAllClubInfo() {
         List<ClubInfoListResponse> clubs = clubService.getAllClubsInfo();
@@ -36,21 +38,18 @@ public class ClubController {
         return ResponseEntity.ok(response);
     }
 
-    // 카테고리별 전체 동아리 조회 (모바일)
     @GetMapping("/filter")
     public ResponseEntity<ApiResponse<List<ClubListByClubCategoryResponse>>> getAllClubsByClubCategories(@RequestParam(name = "clubCategoryUUIDs", defaultValue = "") List<UUID> clubCategoryUUIDs) {
         List<ClubListByClubCategoryResponse> clubs = clubService.getAllClubsByClubCategories(clubCategoryUUIDs);
         return ResponseEntity.ok(new ApiResponse<>("카테고리별 전체 동아리 조회 완료", clubs));
     }
 
-    // 모집 중인 전체 동아리 조회
     @GetMapping("/open")
     public ResponseEntity<ApiResponse<List<ClubListResponse>>> getOpenClubs() {
         List<ClubListResponse> clubs = clubService.getOpenClubs();
         return ResponseEntity.ok(new ApiResponse<>("모집 중인 동아리 조회 완료", clubs));
     }
 
-    // 카테고리별 모집 중인 동아리 조회
     @GetMapping("/open/filter")
     public ResponseEntity<ApiResponse<List<ClubListByClubCategoryResponse>>> getOpenClubsByCategories(
             @RequestParam(name = "clubCategoryUUIDs", defaultValue = "") List<UUID> clubCategoryUUIDs) {
@@ -58,18 +57,15 @@ public class ClubController {
         return ResponseEntity.ok(new ApiResponse<>("카테고리별 모집 중인 동아리 조회 완료", clubs));
     }
 
-    // 카테고리 리스트 조회 (모바일)
     @GetMapping("/categories")
     public ResponseEntity<ApiResponse<List<ClubCategoryResponse>>> getAllClubCategories() {
         List<ClubCategoryResponse> clubCategoryResponses = clubService.getAllClubCategories();
         return ResponseEntity.ok(new ApiResponse<>("카테고리 조회 완료", clubCategoryResponses));
     }
 
-    // 동아리 소개글 조회 (모바일)
     @GetMapping("/intro/{clubUUID}")
     public ResponseEntity<ApiResponse<AdminClubIntroResponse>> getClubIntroByClubId(@PathVariable("clubUUID") UUID clubUUID) {
         AdminClubIntroResponse clubIntroResponse = clubService.getClubIntro(clubUUID);
         return ResponseEntity.ok(new ApiResponse<>("동아리 소개글 조회 성공", clubIntroResponse));
-
     }
 }
