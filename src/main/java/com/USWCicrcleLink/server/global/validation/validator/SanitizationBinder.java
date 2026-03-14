@@ -10,6 +10,9 @@ import java.beans.PropertyEditorSupport;
 
 @ControllerAdvice
 public class SanitizationBinder {
+    private static final Safelist ALLOWED_SAFELIST = Safelist.none()
+            .addTags("a", "b", "strong", "i", "em", "u", "ul", "ol", "li", "p", "br")
+            .addAttributes("a", "href");
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -22,12 +25,9 @@ public class SanitizationBinder {
     }
 
     private String sanitizeContent(String content) {
-        if (content == null) return null;
-
-        Safelist safelist = Safelist.none()
-                .addTags("a", "b", "strong", "i", "em", "u", "ul", "ol", "li", "p", "br")
-                .addAttributes("a", "href");
-
-        return Jsoup.clean(content, safelist);
+        if (content == null) {
+            return null;
+        }
+        return Jsoup.clean(content, ALLOWED_SAFELIST);
     }
 }

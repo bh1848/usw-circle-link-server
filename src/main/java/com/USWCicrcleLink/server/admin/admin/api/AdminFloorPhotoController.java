@@ -2,7 +2,7 @@ package com.USWCicrcleLink.server.admin.admin.api;
 
 import com.USWCicrcleLink.server.admin.admin.dto.AdminFloorPhotoCreationResponse;
 import com.USWCicrcleLink.server.admin.admin.service.AdminFloorPhotoService;
-import com.USWCicrcleLink.server.club.club.domain.FloorPhotoEnum;
+import com.USWCicrcleLink.server.club.domain.FloorPhotoEnum;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

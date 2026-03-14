@@ -2,7 +2,7 @@ package com.USWCicrcleLink.server.clubLeader.api;
 
 import com.USWCicrcleLink.server.admin.admin.service.AdminClubCategoryService;
 import com.USWCicrcleLink.server.clubApplication.dto.ApplicantResultsRequest;
-import com.USWCicrcleLink.server.club.club.dto.ClubCategoryResponse;
+import com.USWCicrcleLink.server.club.dto.ClubCategoryResponse;
 import com.USWCicrcleLink.server.clubLeader.dto.FcmTokenRequest;
 import com.USWCicrcleLink.server.clubLeader.dto.club.*;
 import com.USWCicrcleLink.server.clubLeader.dto.clubMembers.*;

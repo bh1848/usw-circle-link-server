@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.user.dto;
 
-import com.USWCicrcleLink.server.club.club.domain.FloorPhotoEnum;
+import com.USWCicrcleLink.server.club.domain.FloorPhotoEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

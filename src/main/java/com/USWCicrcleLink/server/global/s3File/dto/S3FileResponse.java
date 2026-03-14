@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class S3FileResponse {
-    String presignedUrl;
-
-    String s3FileName;
+    private String presignedUrl;
+    private String s3FileName;
 }

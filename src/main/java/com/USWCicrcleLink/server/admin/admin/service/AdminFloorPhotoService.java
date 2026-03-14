@@ -1,9 +1,9 @@
 package com.USWCicrcleLink.server.admin.admin.service;
 
 import com.USWCicrcleLink.server.admin.admin.dto.AdminFloorPhotoCreationResponse;
-import com.USWCicrcleLink.server.club.club.domain.FloorPhoto;
-import com.USWCicrcleLink.server.club.club.domain.FloorPhotoEnum;
-import com.USWCicrcleLink.server.club.club.repository.FloorPhotoRepository;
+import com.USWCicrcleLink.server.club.domain.FloorPhoto;
+import com.USWCicrcleLink.server.club.domain.FloorPhotoEnum;
+import com.USWCicrcleLink.server.club.repository.FloorPhotoRepository;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.PhotoException;
 import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;

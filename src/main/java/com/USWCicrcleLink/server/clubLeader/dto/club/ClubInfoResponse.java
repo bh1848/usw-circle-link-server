@@ -1,7 +1,7 @@
 package com.USWCicrcleLink.server.clubLeader.dto.club;
 
-import com.USWCicrcleLink.server.club.club.domain.Club;
-import com.USWCicrcleLink.server.club.club.domain.Department;
+import com.USWCicrcleLink.server.club.domain.Club;
+import com.USWCicrcleLink.server.club.domain.Department;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,16 +1,16 @@
 package com.USWCicrcleLink.server.clubLeader.service;
 
+import com.USWCicrcleLink.server.club.domain.*;
+import com.USWCicrcleLink.server.club.repository.*;
 import com.USWCicrcleLink.server.clubApplication.domain.ClubApplication;
 import com.USWCicrcleLink.server.clubApplication.domain.ClubApplicationStatus;
 import com.USWCicrcleLink.server.clubApplication.dto.ApplicantResultsRequest;
 import com.USWCicrcleLink.server.clubApplication.dto.ApplicantsResponse;
 import com.USWCicrcleLink.server.clubApplication.repository.ClubApplicationRepository;
-import com.USWCicrcleLink.server.club.club.domain.*;
-import com.USWCicrcleLink.server.club.club.repository.*;
-import com.USWCicrcleLink.server.club.clubIntro.domain.ClubIntro;
-import com.USWCicrcleLink.server.club.clubIntro.domain.ClubIntroPhoto;
-import com.USWCicrcleLink.server.club.clubIntro.repository.ClubIntroPhotoRepository;
-import com.USWCicrcleLink.server.club.clubIntro.repository.ClubIntroRepository;
+import com.USWCicrcleLink.server.clubIntro.domain.ClubIntro;
+import com.USWCicrcleLink.server.clubIntro.domain.ClubIntroPhoto;
+import com.USWCicrcleLink.server.clubIntro.repository.ClubIntroPhotoRepository;
+import com.USWCicrcleLink.server.clubIntro.repository.ClubIntroRepository;
 import com.USWCicrcleLink.server.clubLeader.domain.Leader;
 import com.USWCicrcleLink.server.clubLeader.dto.club.*;
 import com.USWCicrcleLink.server.clubLeader.dto.clubMembers.*;

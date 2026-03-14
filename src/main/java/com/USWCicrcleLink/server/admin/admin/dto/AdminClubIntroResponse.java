@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.admin.admin.dto;
 
-import com.USWCicrcleLink.server.club.club.domain.RecruitmentStatus;
+import com.USWCicrcleLink.server.club.domain.RecruitmentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -5,7 +5,7 @@ import com.USWCicrcleLink.server.admin.admin.dto.AdminClubIntroResponse;
 import com.USWCicrcleLink.server.admin.admin.dto.AdminClubPageListResponse;
 import com.USWCicrcleLink.server.admin.admin.dto.AdminPwRequest;
 import com.USWCicrcleLink.server.admin.admin.service.AdminClubService;
-import com.USWCicrcleLink.server.club.club.service.ClubService;
+import com.USWCicrcleLink.server.club.service.ClubService;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
 import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import lombok.RequiredArgsConstructor;

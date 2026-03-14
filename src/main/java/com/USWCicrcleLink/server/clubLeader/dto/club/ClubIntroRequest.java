@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.clubLeader.dto.club;
 
-import com.USWCicrcleLink.server.club.club.domain.RecruitmentStatus;
+import com.USWCicrcleLink.server.club.domain.RecruitmentStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

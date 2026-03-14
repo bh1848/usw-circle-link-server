@@ -2,7 +2,7 @@ package com.USWCicrcleLink.server.clubApplication.repository;
 
 import com.USWCicrcleLink.server.clubApplication.domain.ClubApplication;
 import com.USWCicrcleLink.server.clubApplication.domain.ClubApplicationStatus;
-import com.USWCicrcleLink.server.club.club.domain.Club;
+import com.USWCicrcleLink.server.club.domain.Club;
 import com.USWCicrcleLink.server.profile.domain.Profile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

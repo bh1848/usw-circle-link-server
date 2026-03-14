@@ -25,12 +25,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * JWT 유효성 검증 필터 (User, Admin, Leader UUID 처리)
- */
 @Slf4j
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
+    private static final String TOKEN_EXPIRED_ERROR = "TOKEN_EXPIRED";
+    private static final String INVALID_TOKEN_ERROR = "INVALID_TOKEN";
+    private static final String MDC_USER_TYPE_KEY = "userType";
+    private static final String MDC_USER_UUID_KEY = "userUUID";
 
     private final JwtProvider jwtProvider;
     private final List<String> permitAllPaths;
@@ -40,11 +41,8 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain)
-            throws ServletException, IOException {
-
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String requestPath = request.getRequestURI();
-
         if (isPermitAllPath(requestPath)) {
             filterChain.doFilter(request, response);
             return;
@@ -54,48 +52,41 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             TokenValidationResult tokenValidationResult = jwtProvider.validateAccessToken(accessToken);
-
             switch (tokenValidationResult) {
-                case EXPIRED -> throw new CustomAuthenticationException("TOKEN_EXPIRED");
-                case INVALID -> throw new CustomAuthenticationException("INVALID_TOKEN");
+                case EXPIRED -> throw new CustomAuthenticationException(TOKEN_EXPIRED_ERROR);
+                case INVALID -> throw new CustomAuthenticationException(INVALID_TOKEN_ERROR);
                 case VALID -> {
                     Authentication auth = jwtProvider.getAuthentication(accessToken);
                     SecurityContextHolder.getContext().setAuthentication(auth);
-                    setMDCUserDetails(auth, request.getMethod(), request.getRequestURI());
+                    setMdcUserDetails(auth, request.getMethod(), request.getRequestURI());
                     filterChain.doFilter(request, response);
                 }
             }
-        } catch (AuthenticationException e) {
+        } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
-            customAuthenticationEntryPoint.commence(request, response, e);
+            customAuthenticationEntryPoint.commence(request, response, exception);
         } finally {
             MDC.clear();
         }
     }
 
-    /**
-     * MDC(User Type, UUID) 설정
-     */
-    private void setMDCUserDetails(Authentication auth, String method, String path) {
+    private void setMdcUserDetails(Authentication auth, String method, String path) {
         if (auth.getPrincipal() instanceof CustomAdminDetails adminDetails) {
-            MDC.put("userType", "Admin");
-            MDC.put("userUUID", adminDetails.getAdminUUID().toString());
+            MDC.put(MDC_USER_TYPE_KEY, "Admin");
+            MDC.put(MDC_USER_UUID_KEY, adminDetails.getAdminUUID().toString());
         } else if (auth.getPrincipal() instanceof CustomUserDetails userDetails) {
-            MDC.put("userType", "User");
-            MDC.put("userUUID", userDetails.getUserUUID().toString());
+            MDC.put(MDC_USER_TYPE_KEY, "User");
+            MDC.put(MDC_USER_UUID_KEY, userDetails.getUserUUID().toString());
         } else if (auth.getPrincipal() instanceof CustomLeaderDetails leaderDetails) {
-            MDC.put("userType", "Leader");
-            MDC.put("userUUID", leaderDetails.getLeaderUUID().toString());
+            MDC.put(MDC_USER_TYPE_KEY, "Leader");
+            MDC.put(MDC_USER_UUID_KEY, leaderDetails.getLeaderUUID().toString());
         }
 
-        if (log.isDebugEnabled()) {
-            log.info("[{}: {}] {} 요청 경로: {}", MDC.get("userType"), MDC.get("userUUID"), method, path);
+        if (log.isInfoEnabled()) {
+            log.info("[{}: {}] {} 요청 경로: {}", MDC.get(MDC_USER_TYPE_KEY), MDC.get(MDC_USER_UUID_KEY), method, path);
         }
     }
 
-    /**
-     * 인증이 필요 없는 경로인지 확인
-     */
     private boolean isPermitAllPath(String requestPath) {
         return permitAllPaths.stream().anyMatch(permitPath -> pathMatcher.match(permitPath, requestPath));
     }

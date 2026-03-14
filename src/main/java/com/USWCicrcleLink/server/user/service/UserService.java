@@ -1,7 +1,7 @@
 package com.USWCicrcleLink.server.user.service;
 
-import com.USWCicrcleLink.server.club.club.domain.Club;
-import com.USWCicrcleLink.server.club.club.repository.ClubRepository;
+import com.USWCicrcleLink.server.club.domain.Club;
+import com.USWCicrcleLink.server.club.repository.ClubRepository;
 import com.USWCicrcleLink.server.email.domain.EmailToken;
 import com.USWCicrcleLink.server.email.repository.EmailTokenRepository;
 import com.USWCicrcleLink.server.email.service.EmailService;
@@ -13,7 +13,6 @@ import com.USWCicrcleLink.server.global.security.Integration.service.Integration
 import com.USWCicrcleLink.server.global.security.details.CustomUserDetails;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
 import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
-import com.USWCicrcleLink.server.profile.domain.MemberType;
 import com.USWCicrcleLink.server.profile.domain.Profile;
 import com.USWCicrcleLink.server.profile.repository.ProfileRepository;
 import com.USWCicrcleLink.server.profile.service.ProfileService;
@@ -24,7 +23,6 @@ import com.USWCicrcleLink.server.user.domain.WithdrawalToken;
 import com.USWCicrcleLink.server.user.dto.*;
 import com.USWCicrcleLink.server.user.repository.ClubMemberTempRepository;
 import com.USWCicrcleLink.server.user.repository.UserRepository;
-import com.USWCicrcleLink.server.user.repository.WithdrawalTokenRepository;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

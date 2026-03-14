@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.global.security.details.service;
 
-import com.USWCicrcleLink.server.club.club.repository.ClubMembersRepository;
+import com.USWCicrcleLink.server.club.repository.ClubMembersRepository;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.ProfileException;
 import com.USWCicrcleLink.server.global.exception.errortype.UserException;

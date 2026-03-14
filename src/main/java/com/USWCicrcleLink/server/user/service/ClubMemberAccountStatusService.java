@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.user.service;
 
-import com.USWCicrcleLink.server.club.club.domain.Club;
+import com.USWCicrcleLink.server.club.domain.Club;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.ClubMemberAccountStatusException;
 import com.USWCicrcleLink.server.user.domain.ExistingMember.ClubMemberAccountStatus;

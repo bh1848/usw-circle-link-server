@@ -2,7 +2,7 @@ package com.USWCicrcleLink.server.admin.admin.api;
 
 import com.USWCicrcleLink.server.admin.admin.dto.AdminClubCategoryCreationRequest;
 import com.USWCicrcleLink.server.admin.admin.service.AdminClubCategoryService;
-import com.USWCicrcleLink.server.club.club.dto.ClubCategoryResponse;
+import com.USWCicrcleLink.server.club.dto.ClubCategoryResponse;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
 import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import lombok.RequiredArgsConstructor;

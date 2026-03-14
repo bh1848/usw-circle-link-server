@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.admin.admin.dto;
 
-import com.USWCicrcleLink.server.club.club.domain.Department;
+import com.USWCicrcleLink.server.club.domain.Department;
 import lombok.*;
 
 import java.util.UUID;

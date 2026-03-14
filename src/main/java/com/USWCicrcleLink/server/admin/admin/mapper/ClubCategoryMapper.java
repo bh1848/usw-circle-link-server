@@ -1,7 +1,7 @@
 package com.USWCicrcleLink.server.admin.admin.mapper;
 
-import com.USWCicrcleLink.server.club.club.dto.ClubCategoryResponse;
-import com.USWCicrcleLink.server.club.club.domain.ClubCategory;
+import com.USWCicrcleLink.server.club.dto.ClubCategoryResponse;
+import com.USWCicrcleLink.server.club.domain.ClubCategory;
 
 import java.util.List;
 import java.util.stream.Collectors;
