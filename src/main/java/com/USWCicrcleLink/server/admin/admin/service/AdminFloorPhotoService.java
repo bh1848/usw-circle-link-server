@@ -34,8 +34,8 @@ public class AdminFloorPhotoService {
 
         // 기존 사진이 있다면 삭제
         floorPhotoRepository.findByFloor(floor).ifPresent(existingPhoto -> {
-            log.debug("기존 층별 사진 삭제 진행 - Floor: {}, 기존 S3Key: {}", floor, existingPhoto.getFloorPhotoS3key());
-            s3FileUploadService.deleteFile(existingPhoto.getFloorPhotoS3key());
+            log.debug("기존 층별 사진 삭제 진행 - Floor: {}, 기존 S3Key: {}", floor, existingPhoto.getFloorPhotoS3Key());
+            s3FileUploadService.deleteFile(existingPhoto.getFloorPhotoS3Key());
             floorPhotoRepository.delete(existingPhoto);
         });
 
@@ -47,7 +47,7 @@ public class AdminFloorPhotoService {
         FloorPhoto newPhoto = FloorPhoto.builder()
                 .floor(floor)
                 .floorPhotoName(photo.getOriginalFilename())
-                .floorPhotoS3key(s3FileResponse.getS3FileName())
+                .floorPhotoS3Key(s3FileResponse.getS3FileName())
                 .build();
         floorPhotoRepository.save(newPhoto);
 
@@ -64,7 +64,7 @@ public class AdminFloorPhotoService {
         FloorPhoto floorPhoto = floorPhotoRepository.findByFloor(floor)
                 .orElseThrow(() -> new PhotoException(ExceptionType.PHOTO_NOT_FOUND));
 
-        String presignedUrl = s3FileUploadService.generatePresignedGetUrl(floorPhoto.getFloorPhotoS3key());
+        String presignedUrl = s3FileUploadService.generatePresignedGetUrl(floorPhoto.getFloorPhotoS3Key());
 
         log.debug("층별 사진 조회 성공 - Floor: {}, Presigned URL 생성 완료", floor);
         return new AdminFloorPhotoCreationResponse(floor, presignedUrl);
@@ -77,7 +77,7 @@ public class AdminFloorPhotoService {
         FloorPhoto floorPhoto = floorPhotoRepository.findByFloor(floor)
                 .orElseThrow(() -> new PhotoException(ExceptionType.PHOTO_NOT_FOUND));
 
-        s3FileUploadService.deleteFile(floorPhoto.getFloorPhotoS3key());
+        s3FileUploadService.deleteFile(floorPhoto.getFloorPhotoS3Key());
         floorPhotoRepository.delete(floorPhoto);
 
         log.info("층별 사진 삭제 완료 - Floor: {}", floor);

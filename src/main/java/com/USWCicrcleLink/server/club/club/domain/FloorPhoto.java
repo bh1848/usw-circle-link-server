@@ -22,7 +22,7 @@ public class FloorPhoto {
     private String floorPhotoName;
 
     @Column(name = "floor_photo_s3_key", nullable = false)
-    private String floorPhotoS3key;
+    private String floorPhotoS3Key;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "floor_photo_floor", nullable = false, length = 5)

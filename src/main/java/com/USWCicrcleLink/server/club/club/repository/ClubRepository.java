@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ClubRepository extends JpaRepository<Club, Long>, ClubRepositoryCustom{
+public interface ClubRepository extends JpaRepository<Club, Long>, ClubRepositoryCustom {
     @NonNull
     Page<Club> findAll(@NonNull Pageable pageable);
 
@@ -25,7 +25,7 @@ public interface ClubRepository extends JpaRepository<Club, Long>, ClubRepositor
     List<Club> findByClubIds(@Param("clubIds") List<Long> clubIds);
 
     @Query("SELECT c.clubId FROM Club c WHERE c.clubUUID = :clubUUID")
-    Optional<Long> findClubIdByUUID(@Param("clubUUID") UUID clubUUID);
+    Optional<Long> findClubIdByClubUUID(@Param("clubUUID") UUID clubUUID);
 
     boolean existsByClubRoomNumber(String clubRoomNumber);
 }

@@ -173,7 +173,7 @@ public class AdminClubService {
             throw new AdminException(ExceptionType.ADMIN_PASSWORD_NOT_MATCH);
         }
 
-        Long clubId = clubRepository.findClubIdByUUID(clubUUID)
+        Long clubId = clubRepository.findClubIdByClubUUID(clubUUID)
                 .orElseThrow(() -> {
                     log.warn("동아리 삭제 실패 - 존재하지 않는 Club UUID: {}", clubUUID);
                     return new ClubException(ExceptionType.CLUB_NOT_EXISTS);

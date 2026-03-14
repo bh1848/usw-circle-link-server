@@ -64,7 +64,7 @@ public class ClubController {
     }
 
     @GetMapping("/intro/{clubUUID}")
-    public ResponseEntity<ApiResponse<AdminClubIntroResponse>> getClubIntroByClubId(@PathVariable("clubUUID") UUID clubUUID) {
+    public ResponseEntity<ApiResponse<AdminClubIntroResponse>> getClubIntroByClubUUID(@PathVariable("clubUUID") UUID clubUUID) {
         AdminClubIntroResponse clubIntroResponse = clubService.getClubIntro(clubUUID);
         return ResponseEntity.ok(new ApiResponse<>("동아리 소개글 조회 성공", clubIntroResponse));
     }

@@ -170,7 +170,7 @@ public class MypageService {
         FloorPhoto floorPhoto = floorPhotoRepository.findByFloor(floorEnum)
                 .orElseThrow(() -> new BaseException(ExceptionType.PHOTO_NOT_FOUND));
 
-        String presignedUrl = s3FileUploadService.generatePresignedGetUrl(floorPhoto.getFloorPhotoS3key());
+        String presignedUrl = s3FileUploadService.generatePresignedGetUrl(floorPhoto.getFloorPhotoS3Key());
 
         return new ClubFloorPhotoResponse(floorPhoto.getFloor(),presignedUrl);
     }
