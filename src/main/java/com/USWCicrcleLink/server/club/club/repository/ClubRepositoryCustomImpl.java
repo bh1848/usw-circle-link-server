@@ -64,7 +64,7 @@ public class ClubRepositoryCustomImpl implements ClubRepositoryCustom {
                 .setParameter("clubId", clubId)
                 .executeUpdate();
 
-        em.createQuery("DELETE FROM Aplict a WHERE a.club.clubId = :clubId")
+        em.createQuery("DELETE FROM ClubApplication clubApplication WHERE clubApplication.club.clubId = :clubId")
                 .setParameter("clubId", clubId)
                 .executeUpdate();
 

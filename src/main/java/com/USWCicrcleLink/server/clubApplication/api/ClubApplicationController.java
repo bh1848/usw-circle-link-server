@@ -1,6 +1,6 @@
-package com.USWCicrcleLink.server.aplict.api;
+package com.USWCicrcleLink.server.clubApplication.api;
 
-import com.USWCicrcleLink.server.aplict.service.AplictService;
+import com.USWCicrcleLink.server.clubApplication.service.ClubApplicationService;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,25 +15,24 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/apply")
-public class AplictController {
-    private final AplictService aplictService;
+public class ClubApplicationController {
+    private final ClubApplicationService clubApplicationService;
 
     @GetMapping("/can-apply/{clubUUID}")
     public ResponseEntity<ApiResponse<Boolean>> canApply(@PathVariable("clubUUID") UUID clubUUID) {
-        aplictService.checkIfCanApply(clubUUID);
+        clubApplicationService.checkIfCanApply(clubUUID);
         return ResponseEntity.ok(new ApiResponse<>("지원 가능"));
     }
 
     @GetMapping("/{clubUUID}")
     public ResponseEntity<ApiResponse<String>> getGoogleFormUrl(@PathVariable("clubUUID") UUID clubUUID) {
-        String googleFormUrl = aplictService.getGoogleFormUrlByClubUUID(clubUUID);
+        String googleFormUrl = clubApplicationService.getGoogleFormUrlByClubUUID(clubUUID);
         return ResponseEntity.ok(new ApiResponse<>("구글 폼 URL 조회 성공", googleFormUrl));
     }
 
     @PostMapping("/{clubUUID}")
-    public ResponseEntity<ApiResponse<Void>> submitAplict(
-            @PathVariable("clubUUID") UUID clubUUID) {
-        aplictService.submitAplict(clubUUID);
+    public ResponseEntity<ApiResponse<Void>> submitClubApplication(@PathVariable("clubUUID") UUID clubUUID) {
+        clubApplicationService.submitClubApplication(clubUUID);
         return ResponseEntity.ok(new ApiResponse<>("지원서 제출 성공"));
     }
 }

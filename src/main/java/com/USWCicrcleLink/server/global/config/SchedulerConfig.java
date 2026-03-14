@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.global.config;
-import com.USWCicrcleLink.server.aplict.domain.Aplict;
-import com.USWCicrcleLink.server.aplict.repository.AplictRepository;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplication;
+import com.USWCicrcleLink.server.clubApplication.repository.ClubApplicationRepository;
 import com.USWCicrcleLink.server.email.domain.EmailToken;
 import com.USWCicrcleLink.server.email.repository.EmailTokenRepository;
 import com.USWCicrcleLink.server.profile.domain.Profile;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class SchedulerConfig {
 
     private final EmailTokenRepository emailTokenRepository;
-    private final AplictRepository aplictRepository;
+    private final ClubApplicationRepository clubApplicationRepository;
     private final ProfileRepository profileRepository;
     private final ClubMemberTempRepository clubMemberTempRepository;
     private final ClubMemberAccountStatusService clubMemberAccountStatusService;
@@ -55,9 +55,9 @@ public class SchedulerConfig {
         // 지원서에는 최초 합 통보 후 4일이 지난 날짜 값만 기입
         // 현재 날짜와 같은 지원서 삭제
         LocalDateTime now = LocalDateTime.now();
-        List<Aplict> applicantsToDelete = aplictRepository.findAllByDeleteDateBefore(now);
+        List<ClubApplication> applicantsToDelete = clubApplicationRepository.findAllByDeleteDateBefore(now);
         if (!applicantsToDelete.isEmpty()) {
-            aplictRepository.deleteAll(applicantsToDelete);
+            clubApplicationRepository.deleteAll(applicantsToDelete);
             log.debug("4일 지난 지원서 {}개 삭제 완료", applicantsToDelete.size());
         } else {
             log.debug("삭제할 지원서 없음");
@@ -105,3 +105,4 @@ public class SchedulerConfig {
 
 
 }
+

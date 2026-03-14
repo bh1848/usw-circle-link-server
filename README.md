@@ -70,7 +70,7 @@
 - User / Leader / Admin 로그인 구현
 - 통합 로그아웃 및 Refresh Token 재발급 구현
 - Spring Security, JWT, Redis 기반 인증/인가 구조 구현
-- 관리자(`admin/admin`), 공지(`admin/notice`), 지원서(`aplict`), 동아리(`club/club`) 기능 구현
+- 관리자(`admin/admin`), 공지(`admin/notice`), 지원서(`clubApplication`), 동아리(`club/club`) 기능 구현
 - 전역 예외 처리(`GlobalExceptionHandler`) 및 공통 응답 구조(`ApiResponse`) 구현
 - S3 파일 업로드 처리 및 파일 시그니처 검증 구현
 - `@Sanitize`, `@ValidClubRoomNumber` 기반 입력 정제 및 커스텀 검증 로직 구현

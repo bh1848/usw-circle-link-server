@@ -158,9 +158,9 @@ public enum ExceptionType {
     CLUB_MEMBER_SIGN_UP_REQUEST_NOT_EXISTS("CMEMT-201","회원 가입 요청이 존재하지 않습니다.", NOT_FOUND),
 
     /**
-     * Domain: Aplict
+     * Domain: ClubApplication
      */
-    APLICT_NOT_EXISTS("APT-201","지원서가 존재하지 않습니다.", NOT_FOUND),
+    CLUB_APPLICATION_NOT_EXISTS("APT-201","지원서가 존재하지 않습니다.", NOT_FOUND),
     APPLICANT_NOT_EXISTS("APT-202","유효한 지원자가 존재하지 않습니다.", NOT_FOUND),
     ADDITIONAL_APPLICANT_NOT_EXISTS("APT-203","유효한 추합 대상자가 존재하지 않습니다.", NOT_FOUND),
     APPLICANT_COUNT_MISMATCH("APT-204", "선택한 지원자 수와 전체 지원자 수가 일치하지 않습니다.", BAD_REQUEST),
@@ -211,3 +211,4 @@ public enum ExceptionType {
     private final String message;
     private final HttpStatus status;
 }
+

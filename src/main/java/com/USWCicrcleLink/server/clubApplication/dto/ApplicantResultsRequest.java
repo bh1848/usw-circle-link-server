@@ -1,10 +1,9 @@
-package com.USWCicrcleLink.server.aplict.dto;
+package com.USWCicrcleLink.server.clubApplication.dto;
 
-
-import com.USWCicrcleLink.server.aplict.domain.AplictStatus;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplicationStatus;
 import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.Data;
 
 import java.util.UUID;
 
@@ -12,8 +11,8 @@ import java.util.UUID;
 public class ApplicantResultsRequest {
 
     @NotNull(message = "지원서는 필수 입력값입니다.", groups = ValidationGroups.NotBlankGroup.class)
-    private UUID aplictUUID;
+    private UUID clubApplicationUUID;
 
     @NotNull(message = "지원 상태는 필수 입력값입니다.", groups = ValidationGroups.NotBlankGroup.class)
-    private AplictStatus aplictStatus;
+    private ClubApplicationStatus clubApplicationStatus;
 }

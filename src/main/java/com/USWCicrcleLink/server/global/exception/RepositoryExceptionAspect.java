@@ -21,25 +21,24 @@ public class RepositoryExceptionAspect {
     public RepositoryExceptionAspect(DataSource dataSource) {
         this.exTranslator = new SQLErrorCodeSQLExceptionTranslator(dataSource);
     }
+
     @AfterThrowing(
             pointcut = "execution(* com.USWCicrcleLink.server.user.repository.*.*(..)) || " +
-                       "execution(* com.USWCicrcleLink.server.profile.repository.*.*(..)) || " +
-                       "execution(* com.USWCicrcleLink.server.email.repository.*.*(..)) || " +
-                       "execution(* com.USWCicrcleLink.server.aplict.repository.*.*(..))"+
-                        "execution(* com.USWCicrcleLink.server.club.repository.*.*(..)) || "+
-                        "execution(* com.USWCicrcleLink.server.clubLeader.repository.*.*(..)) || "+
-                        "execution(* com.USWCicrcleLink.server.admin.repository.*.*(..)) || ",
+                    "execution(* com.USWCicrcleLink.server.profile.repository.*.*(..)) || " +
+                    "execution(* com.USWCicrcleLink.server.email.repository.*.*(..)) || " +
+                    "execution(* com.USWCicrcleLink.server.clubApplication.repository.*.*(..)) || " +
+                    "execution(* com.USWCicrcleLink.server.club.club.repository.*.*(..)) || " +
+                    "execution(* com.USWCicrcleLink.server.clubLeader.repository.*.*(..)) || " +
+                    "execution(* com.USWCicrcleLink.server.admin.admin.repository.*.*(..))",
             throwing = "ex"
     )
-
     public void logException(JoinPoint joinPoint, Throwable ex) {
         if (ex instanceof SQLException) {
             DataAccessException translatedEx = exTranslator.translate("Repository operation", null, (SQLException) ex);
             throw translatedEx;
-        } else {
-            // 예외 로깅 등 기타 작업 수행
-            log.error("Exception in method: {} with cause: {}", joinPoint.getSignature(), ex.getCause() != null ? ex.getCause() : "NULL");
-            log.error("Exception message: {}", ex.getMessage());
         }
+
+        log.error("Exception in method: {} with cause: {}", joinPoint.getSignature(), ex.getCause() != null ? ex.getCause() : "NULL");
+        log.error("Exception message: {}", ex.getMessage());
     }
 }

@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.profile.service;
 
-import com.USWCicrcleLink.server.aplict.repository.AplictRepository;
+import com.USWCicrcleLink.server.clubApplication.repository.ClubApplicationRepository;
 import com.USWCicrcleLink.server.club.club.repository.ClubMembersRepository;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.ProfileException;
@@ -27,7 +27,7 @@ import java.util.UUID;
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final AplictRepository aplictRepository;
+    private final ClubApplicationRepository clubApplicationRepository;
     private final ClubMembersRepository clubMembersRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -109,7 +109,7 @@ public class ProfileService {
                 .orElseThrow(() -> new UserException(ExceptionType.USER_NOT_EXISTS));
 
         // 프로필과 연관된 테이블 데이터 삭제
-        aplictRepository.deleteAllByProfile(profile);
+        clubApplicationRepository.deleteAllByProfile(profile);
         clubMembersRepository.deleteAllByProfile(profile);
 
         // 프로필 삭제

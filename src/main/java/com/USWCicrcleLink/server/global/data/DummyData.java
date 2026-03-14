@@ -2,9 +2,9 @@ package com.USWCicrcleLink.server.global.data;
 
 import com.USWCicrcleLink.server.admin.admin.domain.Admin;
 import com.USWCicrcleLink.server.admin.admin.repository.AdminRepository;
-import com.USWCicrcleLink.server.aplict.domain.Aplict;
-import com.USWCicrcleLink.server.aplict.domain.AplictStatus;
-import com.USWCicrcleLink.server.aplict.repository.AplictRepository;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplication;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplicationStatus;
+import com.USWCicrcleLink.server.clubApplication.repository.ClubApplicationRepository;
 import com.USWCicrcleLink.server.club.club.domain.*;
 import com.USWCicrcleLink.server.club.club.repository.*;
 import com.USWCicrcleLink.server.club.clubIntro.domain.ClubIntro;
@@ -43,7 +43,7 @@ public class DummyData {
     private final AdminRepository adminRepository;
     private final ClubRepository clubRepository;
     private final ClubMembersRepository clubMembersRepository;
-    private final AplictRepository aplictRepository;
+    private final ClubApplicationRepository clubApplicationRepository;
     private final ClubIntroRepository clubIntroRepository;
     private final ClubIntroPhotoRepository clubIntroPhotoRepository;
     private final LeaderRepository leaderRepository;
@@ -549,37 +549,37 @@ public class DummyData {
         }
 
         // FLAG 동아리 지원자
-        Aplict aplict1 = Aplict.builder()
+        ClubApplication clubApplication1 = ClubApplication.builder()
                 .profile(profile1)
                 .club(flagClub)
                 .submittedAt(LocalDateTime.now())
                 .build();
-        aplictRepository.save(aplict1);
+        clubApplicationRepository.save(clubApplication1);
 
-        Aplict aplict2 = Aplict.builder()
+        ClubApplication clubApplication2 = ClubApplication.builder()
                 .profile(profile2)
                 .club(flagClub)
                 .submittedAt(LocalDateTime.now())
                 .build();
-        aplictRepository.save(aplict2);
+        clubApplicationRepository.save(clubApplication2);
 
-        Aplict aplict3 = Aplict.builder()
+        ClubApplication clubApplication3 = ClubApplication.builder()
                 .profile(profile3)
                 .club(flagClub)
                 .submittedAt(LocalDateTime.now())
                 .checked(true)
-                .aplictStatus(AplictStatus.FAIL)
+                .clubApplicationStatus(ClubApplicationStatus.FAIL)
                 .build();
-        aplictRepository.save(aplict3);
+        clubApplicationRepository.save(clubApplication3);
 
-        Aplict aplict4 = Aplict.builder()
+        ClubApplication clubApplication4 = ClubApplication.builder()
                 .profile(profile4)
                 .club(flagClub)
                 .submittedAt(LocalDateTime.now())
                 .checked(true)
-                .aplictStatus(AplictStatus.FAIL)
+                .clubApplicationStatus(ClubApplicationStatus.FAIL)
                 .build();
-        aplictRepository.save(aplict4);
+        clubApplicationRepository.save(clubApplication4);
 
         // flag동아리 소속
         ClubMembers clubMember5 = ClubMembers.builder()
@@ -621,13 +621,13 @@ public class DummyData {
                 .build();
         clubMembersRepository.save(badmintonMember2);
 
-        Aplict badmintonAplict = Aplict.builder()
+        ClubApplication badmintonClubApplication = ClubApplication.builder()
                 .profile(profile1)
                 .club(badmintonClub)
                 .submittedAt(LocalDateTime.now())
-                .aplictStatus(AplictStatus.PASS)
+                .clubApplicationStatus(ClubApplicationStatus.PASS)
                 .build();
-        aplictRepository.save(badmintonAplict);
+        clubApplicationRepository.save(badmintonClubApplication);
 
         // 봉사동아리 소속 및 지원
         ClubMembers volunteerMember = ClubMembers.builder()
@@ -636,13 +636,13 @@ public class DummyData {
                 .build();
         clubMembersRepository.save(volunteerMember);
 
-        Aplict volunteerAplict = Aplict.builder()
+        ClubApplication volunteerClubApplication = ClubApplication.builder()
                 .profile(profile1)
                 .club(volunteerClub)
                 .submittedAt(LocalDateTime.now())
-                .aplictStatus(AplictStatus.FAIL)
+                .clubApplicationStatus(ClubApplicationStatus.FAIL)
                 .build();
-        aplictRepository.save(volunteerAplict);
+        clubApplicationRepository.save(volunteerClubApplication);
 
         // 클럽 카테고리 더미 데이터 추가
         ClubCategory clubCategory1 = ClubCategory.builder()
@@ -776,14 +776,14 @@ public class DummyData {
 
         clubMembersRepository.save(clubMembers);
 
-        Aplict aplict = Aplict.builder()
+        ClubApplication clubApplication = ClubApplication.builder()
                 .profile(profile)
                 .club(allaboutClub)
                 .submittedAt(LocalDateTime.now())
-                .aplictStatus(AplictStatus.PASS)
+                .clubApplicationStatus(ClubApplicationStatus.PASS)
                 .build();
 
-        aplictRepository.save(aplict);
+        clubApplicationRepository.save(clubApplication);
     }
 
     //user3, 굴리세 데이터
@@ -849,14 +849,14 @@ public class DummyData {
                 .build();
         clubIntroRepository.save(gullisaeIntro);
 
-        Aplict aplict = Aplict.builder()
+        ClubApplication clubApplication = ClubApplication.builder()
                 .profile(profile)
                 .club(gullisaeClub)
                 .submittedAt(LocalDateTime.now())
-                .aplictStatus(AplictStatus.PASS)
+                .clubApplicationStatus(ClubApplicationStatus.PASS)
                 .build();
 
-        aplictRepository.save(aplict);
+        clubApplicationRepository.save(clubApplication);
     }
 
     void initclub() {
@@ -1067,3 +1067,4 @@ public class DummyData {
 
 
 }
+

@@ -1,10 +1,10 @@
 package com.USWCicrcleLink.server.clubLeader.service;
 
-import com.USWCicrcleLink.server.aplict.domain.Aplict;
-import com.USWCicrcleLink.server.aplict.domain.AplictStatus;
-import com.USWCicrcleLink.server.aplict.dto.ApplicantResultsRequest;
-import com.USWCicrcleLink.server.aplict.dto.ApplicantsResponse;
-import com.USWCicrcleLink.server.aplict.repository.AplictRepository;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplication;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplicationStatus;
+import com.USWCicrcleLink.server.clubApplication.dto.ApplicantResultsRequest;
+import com.USWCicrcleLink.server.clubApplication.dto.ApplicantsResponse;
+import com.USWCicrcleLink.server.clubApplication.repository.ClubApplicationRepository;
 import com.USWCicrcleLink.server.club.club.domain.*;
 import com.USWCicrcleLink.server.club.club.repository.*;
 import com.USWCicrcleLink.server.club.clubIntro.domain.ClubIntro;
@@ -68,7 +68,7 @@ public class ClubLeaderService {
     private final ClubRepository clubRepository;
     private final ClubIntroRepository clubIntroRepository;
     private final ClubMembersRepository clubMembersRepository;
-    private final AplictRepository aplictRepository;
+    private final ClubApplicationRepository clubApplicationRepository;
     private final ClubIntroPhotoRepository clubIntroPhotoRepository;
     private final ClubMainPhotoRepository clubMainPhotoRepository;
     private final ProfileRepository profileRepository;
@@ -665,10 +665,10 @@ public class ClubLeaderService {
         Club club = validateLeaderAccess(clubUUID);
 
         // 합/불 처리되지 않은 동아리 지원자 조회
-        List<Aplict> aplicts = aplictRepository.findAllWithProfileByClubId(club.getClubId(), false);
-        List<ApplicantsResponse> applicants = aplicts.stream()
+        List<ClubApplication> clubApplications = clubApplicationRepository.findAllWithProfileByClubId(club.getClubId(), false);
+        List<ApplicantsResponse> applicants = clubApplications.stream()
                 .map(ap -> new ApplicantsResponse(
-                        ap.getAplictUUID(),
+                        ap.getClubApplicationUUID(),
                         ap.getProfile()
                 ))
                 .toList();
@@ -681,40 +681,40 @@ public class ClubLeaderService {
         Club club = validateLeaderAccess(clubUUID);
 
         // 동아리 지원자 전원 조회(최초 합격)
-        List<Aplict> applicants = aplictRepository.findByClub_ClubIdAndChecked(club.getClubId(), false);
+        List<ClubApplication> applicants = clubApplicationRepository.findByClub_ClubIdAndChecked(club.getClubId(), false);
 
         // 선택된 지원자 수와 전체 동아리 지원자 수 비교
         validateTotalApplicants(applicants, results);
 
         // 지원자 검증(지원한 동아리 + 지원서 + check안된 상태)
         for (ApplicantResultsRequest result : results) {
-            Aplict applicant = aplictRepository.findByClub_ClubIdAndAplictUUIDAndChecked(
+            ClubApplication applicant = clubApplicationRepository.findByClub_ClubIdAndClubApplicationUUIDAndChecked(
                             club.getClubId(),
-                            result.getAplictUUID(),
+                            result.getClubApplicationUUID(),
                             false)
-                    .orElseThrow(() -> new AplictException(ExceptionType.APPLICANT_NOT_EXISTS));
+                    .orElseThrow(() -> new ClubApplicationException(ExceptionType.APPLICANT_NOT_EXISTS));
 
             // 중복 가입 체크
             checkDuplicateClubMember(applicant.getProfile().getProfileId(), club.getClubId());
 
             // 합격 불합격 상태 업데이트
             // 합/불, checked, 삭제 날짜
-            AplictStatus aplictResult = result.getAplictStatus();// 지원 결과 PASS/ FAIL
-            if (aplictResult == AplictStatus.PASS) {
+            ClubApplicationStatus clubApplicationResult = result.getClubApplicationStatus();// 지원 결과 PASS/ FAIL
+            if (clubApplicationResult == ClubApplicationStatus.PASS) {
                 ClubMembers newClubMembers = ClubMembers.builder()
                         .club(club)
                         .profile(applicant.getProfile())
                         .build();
-                applicant.updateAplictStatus(aplictResult, true, LocalDateTime.now().plusDays(4));
+                applicant.updateClubApplicationStatus(clubApplicationResult, true, LocalDateTime.now().plusDays(4));
                 clubMembersRepository.save(newClubMembers);
-                log.debug("합격 처리 완료: {}", applicant.getAplictUUID());
-            } else if (aplictResult == AplictStatus.FAIL) {
-                applicant.updateAplictStatus(aplictResult, true, LocalDateTime.now().plusDays(4));
-                log.debug("불합격 처리 완료: {}", applicant.getAplictUUID());
+                log.debug("합격 처리 완료: {}", applicant.getClubApplicationUUID());
+            } else if (clubApplicationResult == ClubApplicationStatus.FAIL) {
+                applicant.updateClubApplicationStatus(clubApplicationResult, true, LocalDateTime.now().plusDays(4));
+                log.debug("불합격 처리 완료: {}", applicant.getClubApplicationUUID());
             }
 
-            aplictRepository.save(applicant);
-            fcmService.sendMessageTo(applicant, aplictResult);
+            clubApplicationRepository.save(applicant);
+            fcmService.sendMessageTo(applicant, clubApplicationResult);
         }
     }
 
@@ -730,17 +730,17 @@ public class ClubLeaderService {
     }
 
     // 선택된 지원자 수와 전체 지원자 수 비교
-    private void validateTotalApplicants(List<Aplict> applicants, List<ApplicantResultsRequest> results) {
+    private void validateTotalApplicants(List<ClubApplication> applicants, List<ApplicantResultsRequest> results) {
         Set<UUID> applicantUUIDs = applicants.stream()
-                .map(Aplict::getAplictUUID)
+                .map(ClubApplication::getClubApplicationUUID)
                 .collect(Collectors.toSet());
 
         Set<UUID> requestedApplicantUUIDs = results.stream()
-                .map(ApplicantResultsRequest::getAplictUUID)
+                .map(ApplicantResultsRequest::getClubApplicationUUID)
                 .collect(Collectors.toSet());
 
         if (!requestedApplicantUUIDs.equals(applicantUUIDs)) {
-            throw new AplictException(ExceptionType.APPLICANT_COUNT_MISMATCH);
+            throw new ClubApplicationException(ExceptionType.APPLICANT_COUNT_MISMATCH);
         }
     }
 
@@ -750,10 +750,10 @@ public class ClubLeaderService {
         Club club = validateLeaderAccess(clubUUID);
 
         // 불합격자 동아리 지원자 조회
-        List<Aplict> aplicts = aplictRepository.findAllWithProfileByClubIdAndFailed(club.getClubId(), true, AplictStatus.FAIL);
-        List<ApplicantsResponse> applicants = aplicts.stream()
+        List<ClubApplication> clubApplications = clubApplicationRepository.findAllWithProfileByClubIdAndFailed(club.getClubId(), true, ClubApplicationStatus.FAIL);
+        List<ApplicantsResponse> applicants = clubApplications.stream()
                 .map(ap -> new ApplicantsResponse(
-                        ap.getAplictUUID(),
+                        ap.getClubApplicationUUID(),
                         ap.getProfile()
                 ))
                 .toList();
@@ -767,13 +767,13 @@ public class ClubLeaderService {
 
         // 지원자 검증(지원한 동아리 + 지원서 + check된 상태 + 불합)
         for (ApplicantResultsRequest result : results) {
-            Aplict applicant = aplictRepository.findByClub_ClubIdAndAplictUUIDAndCheckedAndAplictStatus(
+            ClubApplication applicant = clubApplicationRepository.findByClub_ClubIdAndClubApplicationUUIDAndCheckedAndClubApplicationStatus(
                             club.getClubId(),
-                            result.getAplictUUID(),
+                            result.getClubApplicationUUID(),
                             true,
-                            AplictStatus.FAIL
+                            ClubApplicationStatus.FAIL
                     )
-                    .orElseThrow(() -> new AplictException(ExceptionType.ADDITIONAL_APPLICANT_NOT_EXISTS));
+                    .orElseThrow(() -> new ClubApplicationException(ExceptionType.ADDITIONAL_APPLICANT_NOT_EXISTS));
 
             // 중복 가입 체크
             checkDuplicateClubMember(applicant.getProfile().getProfileId(), club.getClubId());
@@ -786,12 +786,12 @@ public class ClubLeaderService {
                     .build();
             clubMembersRepository.save(newClubMembers);
 
-            AplictStatus aplictResult = result.getAplictStatus();
-            applicant.updateFailedAplictStatus(aplictResult);
-            aplictRepository.save(applicant);
+            ClubApplicationStatus clubApplicationResult = result.getClubApplicationStatus();
+            applicant.updateFailedClubApplicationStatus(clubApplicationResult);
+            clubApplicationRepository.save(applicant);
 
-            fcmService.sendMessageTo(applicant, aplictResult);
-            log.debug("추가 합격 처리 완료: {}", applicant.getAplictUUID());
+            fcmService.sendMessageTo(applicant, clubApplicationResult);
+            log.debug("추가 합격 처리 완료: {}", applicant.getClubApplicationUUID());
         }
     }
 

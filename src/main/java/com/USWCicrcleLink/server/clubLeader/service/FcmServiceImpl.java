@@ -1,7 +1,7 @@
 package com.USWCicrcleLink.server.clubLeader.service;
 
-import com.USWCicrcleLink.server.aplict.domain.Aplict;
-import com.USWCicrcleLink.server.aplict.domain.AplictStatus;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplication;
+import com.USWCicrcleLink.server.clubApplication.domain.ClubApplicationStatus;
 import com.USWCicrcleLink.server.clubLeader.dto.FcmMessageDto;
 import com.USWCicrcleLink.server.clubLeader.dto.FcmTokenRequest;
 import com.USWCicrcleLink.server.global.security.details.CustomUserDetails;
@@ -40,25 +40,25 @@ public class FcmServiceImpl implements FcmService {
     private String fireBaseConfigPath;
     private final String FCM_API_URL = "https://fcm.googleapis.com/v1/projects/usw-circle-link/messages:send";
     private final String GOOGLE_AUTH_URL = "https://www.googleapis.com/auth/cloud-platform";
-    private final String APLICT_TITLE_MESSAGE = "동아리 지원 결과";
-    private final String APLICT_PASS_MESSAGE = "에 합격했습니다.";
-    private final String APLICT_FAIL_MESSAGE = "에 불합격했습니다.";
-    private final String APLICT_ERROR_MESSAGE = "관리자에게 문의 해주세요.";
+    private final String CLUB_APPLICATION_TITLE_MESSAGE = "동아리 지원 결과";
+    private final String CLUB_APPLICATION_PASS_MESSAGE = "에 합격했습니다.";
+    private final String CLUB_APPLICATION_FAIL_MESSAGE = "에 불합격했습니다.";
+    private final String CLUB_APPLICATION_ERROR_MESSAGE = "관리자에게 문의 해주세요.";
 
     private static final int FCM_TOKEN_CERTIFICATION_TIME = 60;
 
     // 메시지 구성, 토큰 받고 메시지 처리
     @Override
-    public int sendMessageTo(Aplict aplict, AplictStatus aplictResult) throws IOException {
-        String fcmToken = aplict.getProfile().getFcmToken();
+    public int sendMessageTo(ClubApplication clubApplication, ClubApplicationStatus clubApplicationResult) throws IOException {
+        String fcmToken = clubApplication.getProfile().getFcmToken();
         if (fcmToken == null || fcmToken.trim().isEmpty()) {
-            log.warn("FCM 토큰이 없음. 프로필: {} 알림 전송 생략", aplict.getProfile().getProfileId());
+            log.warn("FCM 토큰이 없음. 프로필: {} 알림 전송 생략", clubApplication.getProfile().getProfileId());
             return 0;
         }
 
         try {
             // 메시지 구성
-            String message = makeMessage(aplict, aplictResult);
+            String message = makeMessage(clubApplication, clubApplicationResult);
 
             RestTemplate restTemplate = new RestTemplate();
             // 한글 설정
@@ -75,18 +75,18 @@ public class FcmServiceImpl implements FcmService {
 
             // 푸시 알림 전송 실패 예외처리
             if (response.getStatusCode() == HttpStatus.OK) {
-                log.debug("푸시 알림 전송 완료: UUID: {}", aplict.getAplictUUID());
+                log.debug("푸시 알림 전송 완료: UUID: {}", clubApplication.getClubApplicationUUID());
                 return 1;
             } else {
                 // FCM 토큰아 유효하지 않음
                 if (response.getStatusCode() == HttpStatus.UNAUTHORIZED || response.getStatusCode() == HttpStatus.BAD_REQUEST) {
                     // FCM 토큰 삭제 처리
-                    profileRepository.findById(aplict.getProfile().getProfileId())
+                    profileRepository.findById(clubApplication.getProfile().getProfileId())
                             .ifPresent(profile -> {
                                 profile.updateFcmToken(null); // 토큰 무효화
                                 profileRepository.save(profile);
                             });
-                    log.warn("FCM 토큰이 유효하지 않음. 프로필: {} FCM 토큰 삭제", aplict.getProfile().getProfileId());
+                    log.warn("FCM 토큰이 유효하지 않음. 프로필: {} FCM 토큰 삭제", clubApplication.getProfile().getProfileId());
                 }
                 return 0;
             }
@@ -109,23 +109,23 @@ public class FcmServiceImpl implements FcmService {
 
     // FCM 전송 정보를 기반으로 메시지 구성
     // result값에 따라 합불 처리
-    private String makeMessage(Aplict aplict, AplictStatus aplictResult) throws JsonProcessingException {
+    private String makeMessage(ClubApplication clubApplication, ClubApplicationStatus clubApplicationResult) throws JsonProcessingException {
         // json변환
         ObjectMapper om = new ObjectMapper();
 
         // 메시지 제목
-        String titleMessage = APLICT_TITLE_MESSAGE;
+        String titleMessage = CLUB_APPLICATION_TITLE_MESSAGE;
 
         // 메시지 내용
         String bodyMessage;
-        if (aplictResult == AplictStatus.PASS) bodyMessage = aplict.getClub().getClubName() + APLICT_PASS_MESSAGE;
-        else if (aplictResult == AplictStatus.FAIL) bodyMessage = aplict.getClub().getClubName() + APLICT_FAIL_MESSAGE;
-        else bodyMessage = APLICT_ERROR_MESSAGE;
+        if (clubApplicationResult == ClubApplicationStatus.PASS) bodyMessage = clubApplication.getClub().getClubName() + CLUB_APPLICATION_PASS_MESSAGE;
+        else if (clubApplicationResult == ClubApplicationStatus.FAIL) bodyMessage = clubApplication.getClub().getClubName() + CLUB_APPLICATION_FAIL_MESSAGE;
+        else bodyMessage = CLUB_APPLICATION_ERROR_MESSAGE;
 
         // 메시지 구성
         FcmMessageDto createFcmMessage = FcmMessageDto.builder()
                 .message(FcmMessageDto.Message.builder()
-                        .token(aplict.getProfile().getFcmToken().trim())
+                        .token(clubApplication.getProfile().getFcmToken().trim())
                         .notification(
                                 FcmMessageDto.Notification.builder()
                                         .title(titleMessage)
@@ -158,3 +158,4 @@ public class FcmServiceImpl implements FcmService {
         }
     }
 }
+
