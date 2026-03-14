@@ -6,7 +6,7 @@ import com.USWCicrcleLink.server.global.bucket4j.RateLimite;
 import com.USWCicrcleLink.server.global.exception.errortype.EmailTokenException;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
 import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
-import com.USWCicrcleLink.server.global.validation.ValidationSequence;
+import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import com.USWCicrcleLink.server.user.domain.AuthToken;
 import com.USWCicrcleLink.server.user.domain.ExistingMember.ClubMemberTemp;
 import com.USWCicrcleLink.server.user.domain.User;

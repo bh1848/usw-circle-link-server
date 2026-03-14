@@ -23,7 +23,7 @@ import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;
 import com.USWCicrcleLink.server.global.s3File.dto.S3FileResponse;
 import com.USWCicrcleLink.server.global.security.details.CustomLeaderDetails;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
-import com.USWCicrcleLink.server.global.validation.FileSignatureValidator;
+import com.USWCicrcleLink.server.global.validation.validator.FileSignatureValidator;
 import com.USWCicrcleLink.server.profile.domain.MemberType;
 import com.USWCicrcleLink.server.profile.domain.Profile;
 import com.USWCicrcleLink.server.profile.repository.ProfileRepository;

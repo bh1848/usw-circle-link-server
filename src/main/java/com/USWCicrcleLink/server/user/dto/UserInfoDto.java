@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.user.dto;
 
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
+import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

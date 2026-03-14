@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.clubLeader.dto.clubMembers;
 
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
+import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import com.USWCicrcleLink.server.profile.domain.MemberType;
 import com.USWCicrcleLink.server.profile.domain.Profile;
 import jakarta.validation.constraints.NotBlank;

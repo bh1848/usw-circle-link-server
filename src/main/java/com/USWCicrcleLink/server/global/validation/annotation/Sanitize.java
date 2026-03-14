@@ -1,4 +1,4 @@
-package com.USWCicrcleLink.server.global.validation;
+package com.USWCicrcleLink.server.global.validation.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

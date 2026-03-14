@@ -1,4 +1,4 @@
-package com.USWCicrcleLink.server.global.validation;
+package com.USWCicrcleLink.server.global.validation.support;
 
 public class ValidationGroups {
     public interface NotBlankGroup {}

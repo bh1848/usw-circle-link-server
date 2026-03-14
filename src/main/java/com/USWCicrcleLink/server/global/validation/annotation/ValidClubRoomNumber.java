@@ -1,5 +1,6 @@
-package com.USWCicrcleLink.server.global.validation;
+package com.USWCicrcleLink.server.global.validation.annotation;
 
+import com.USWCicrcleLink.server.global.validation.validator.ClubRoomNumberValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

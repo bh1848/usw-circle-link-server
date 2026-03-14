@@ -1,10 +1,6 @@
 package com.USWCicrcleLink.server.club.club.domain;
 
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.UUID;

@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.admin.admin.dto;
 
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
+import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

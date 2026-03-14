@@ -4,7 +4,7 @@ import com.USWCicrcleLink.server.admin.admin.dto.AdminClubCategoryCreationReques
 import com.USWCicrcleLink.server.admin.admin.service.AdminClubCategoryService;
 import com.USWCicrcleLink.server.club.club.dto.ClubCategoryResponse;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
-import com.USWCicrcleLink.server.global.validation.ValidationSequence;
+import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

@@ -1,6 +1,6 @@
 package com.USWCicrcleLink.server.admin.notice.dto;
 
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
+import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

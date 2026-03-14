@@ -1,8 +1,8 @@
 package com.USWCicrcleLink.server.admin.admin.dto;
 
 import com.USWCicrcleLink.server.club.club.domain.Department;
-import com.USWCicrcleLink.server.global.validation.ValidClubRoomNumber;
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
+import com.USWCicrcleLink.server.global.validation.annotation.ValidClubRoomNumber;
+import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;

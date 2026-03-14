@@ -1,5 +1,6 @@
-package com.USWCicrcleLink.server.global.validation;
+package com.USWCicrcleLink.server.global.validation.annotation;
 
+import com.USWCicrcleLink.server.global.validation.validator.EnumFormatValidator;
 import jakarta.validation.Constraint;
 
 import java.lang.annotation.ElementType;

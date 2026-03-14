@@ -4,7 +4,7 @@ import com.USWCicrcleLink.server.clubLeader.dto.LeaderLoginRequest;
 import com.USWCicrcleLink.server.clubLeader.dto.LeaderLoginResponse;
 import com.USWCicrcleLink.server.clubLeader.service.ClubLeaderLoginService;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
-import com.USWCicrcleLink.server.global.validation.ValidationSequence;
+import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

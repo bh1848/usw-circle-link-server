@@ -6,7 +6,7 @@ import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeUpdateRequest;
 import com.USWCicrcleLink.server.admin.notice.dto.NoticeDetailResponse;
 import com.USWCicrcleLink.server.admin.notice.service.AdminNoticeService;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
-import com.USWCicrcleLink.server.global.validation.ValidationSequence;
+import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

@@ -2,7 +2,7 @@ package com.USWCicrcleLink.server.aplict.dto;
 
 
 import com.USWCicrcleLink.server.aplict.domain.AplictStatus;
-import com.USWCicrcleLink.server.global.validation.ValidationGroups;
+import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 

@@ -7,7 +7,7 @@ import com.USWCicrcleLink.server.admin.admin.dto.AdminPwRequest;
 import com.USWCicrcleLink.server.admin.admin.service.AdminClubService;
 import com.USWCicrcleLink.server.club.club.service.ClubService;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
-import com.USWCicrcleLink.server.global.validation.ValidationSequence;
+import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

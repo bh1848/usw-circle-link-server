@@ -1,5 +1,6 @@
-package com.USWCicrcleLink.server.global.validation;
+package com.USWCicrcleLink.server.global.validation.validator;
 
+import com.USWCicrcleLink.server.global.validation.annotation.EnumFormat;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
