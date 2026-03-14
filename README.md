@@ -64,16 +64,16 @@
 
 ## 5. 담당 영역
 
-인증/인가, 입력 검증, 파일 업로드 검증, 공통 예외 처리, 일부 조회 및 삭제 로직을 담당했습니다.
+인증/인가, 운영자/공지/지원서/동아리 기능, 공통 예외 처리, 응답 규약, 파일 업로드 검증, 입력 검증을 담당했습니다.
 
 ### 담당 범위
-- User / Leader / Admin 권한별 인증·인가 구조 설계
-- JWT 기반 로그인, 재발급, 로그아웃 구현
-- Redis 기반 Refresh Token 저장 및 무효화 처리
-- 사용자 입력값 Sanitizing 및 Validation 분리
-- 파일 업로드 검증 로직 구현
-- 공통 응답 포맷 및 전역 예외 처리 정리
-- 대량 연관 데이터 삭제 및 S3 객체 삭제 로직 구현
+- User / Leader / Admin 로그인 구현
+- 통합 로그아웃 및 Refresh Token 재발급 구현
+- Spring Security, JWT, Redis 기반 인증/인가 구조 구현
+- 관리자(`admin/admin`), 공지(`admin/notice`), 지원서(`aplict`), 동아리(`club/club`) 기능 구현
+- 전역 예외 처리(`GlobalExceptionHandler`) 및 공통 응답 구조(`ApiResponse`) 구현
+- S3 파일 업로드 처리 및 파일 시그니처 검증 구현
+- `@Sanitize`, `@ValidClubRoomNumber` 기반 입력 정제 및 커스텀 검증 로직 구현
 
 <br/>
 
