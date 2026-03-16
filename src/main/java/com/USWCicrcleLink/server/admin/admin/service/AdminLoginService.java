@@ -29,9 +29,6 @@ public class AdminLoginService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
 
-    /**
-     * 로그인 (Admin)
-     */
     @RateLimite(action = "WEB_LOGIN")
     public AdminLoginResponse adminLogin(AdminLoginRequest request, HttpServletResponse response) {
         Admin admin = adminRepository.findByAdminAccount(request.getAdminAccount())
@@ -42,10 +39,10 @@ public class AdminLoginService {
         }
 
         UUID adminUUID = admin.getAdminUUID();
-        String accessToken = jwtProvider.createAccessToken(adminUUID, admin.getRole(), response);
-        String refreshToken = refreshTokenService.issueRefreshToken(adminUUID, admin.getRole(), response);
+        String accessToken = jwtProvider.createAccessToken(adminUUID, admin.getRole());
+        refreshTokenService.issue(adminUUID, admin.getRole(), response);
 
         log.debug("Admin 로그인 성공 - uuid: {}", adminUUID);
-        return new AdminLoginResponse(accessToken, refreshToken, Role.ADMIN);
+        return new AdminLoginResponse(accessToken, Role.ADMIN);
     }
 }

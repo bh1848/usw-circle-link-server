@@ -56,6 +56,7 @@ public class SecurityConfig {
     private static final String[] USER_EXIT_DELETE_PATHS = {"/users/exit"};
     private static final String[] USER_APPLY_PATHS = {"/apply/**"};
     private static final String[] LEADER_ALL_PATHS = {"/club-leader/**"};
+    private static final String[] ADMIN_LEADER_SHARED_GET_PATHS = mergePaths(ADMIN_SHARED_READ_PATHS, NOTICE_SHARED_READ_PATHS);
 
     private final JwtProvider jwtProvider;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
@@ -103,10 +104,18 @@ public class SecurityConfig {
 
     private void configureAuthorization(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(securityProperties.getPermitAllPaths().toArray(new String[0])).permitAll();
+        configureSharedReadRules(auth);
+        configureAdminRules(auth);
+        configureUserRules(auth);
+        configureLeaderRules(auth);
+        auth.anyRequest().authenticated();
+    }
 
-        auth.requestMatchers(HttpMethod.GET, ADMIN_SHARED_READ_PATHS).hasAnyRole(ROLE_ADMIN, ROLE_LEADER);
-        auth.requestMatchers(HttpMethod.GET, NOTICE_SHARED_READ_PATHS).hasAnyRole(ROLE_ADMIN, ROLE_LEADER);
+    private void configureSharedReadRules(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(HttpMethod.GET, ADMIN_LEADER_SHARED_GET_PATHS).hasAnyRole(ROLE_ADMIN, ROLE_LEADER);
+    }
 
+    private void configureAdminRules(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(HttpMethod.GET, ADMIN_ALL_PATHS).hasRole(ROLE_ADMIN);
         auth.requestMatchers(HttpMethod.POST, ADMIN_ALL_PATHS).hasRole(ROLE_ADMIN);
         auth.requestMatchers(HttpMethod.PATCH, ADMIN_ALL_PATHS).hasRole(ROLE_LEADER);
@@ -115,21 +124,23 @@ public class SecurityConfig {
 
         auth.requestMatchers(HttpMethod.POST, NOTICE_ADMIN_PATHS).hasRole(ROLE_ADMIN);
         auth.requestMatchers(HttpMethod.DELETE, NOTICE_ADMIN_PATHS).hasRole(ROLE_ADMIN);
+    }
 
+    private void configureUserRules(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(HttpMethod.PATCH, USER_PATCH_PATHS).hasRole(ROLE_USER);
         auth.requestMatchers(HttpMethod.GET, USER_GET_PATHS).hasRole(ROLE_USER);
         auth.requestMatchers(HttpMethod.DELETE, USER_EXIT_DELETE_PATHS).hasRole(ROLE_USER);
         auth.requestMatchers(HttpMethod.POST, USER_EXIT_POST_PATHS).hasRole(ROLE_USER);
         auth.requestMatchers(HttpMethod.POST, USER_APPLY_PATHS).hasRole(ROLE_USER);
         auth.requestMatchers(HttpMethod.GET, USER_APPLY_PATHS).hasRole(ROLE_USER);
+    }
 
+    private void configureLeaderRules(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers(HttpMethod.POST, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
         auth.requestMatchers(HttpMethod.GET, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
         auth.requestMatchers(HttpMethod.PATCH, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
         auth.requestMatchers(HttpMethod.DELETE, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
         auth.requestMatchers(HttpMethod.PUT, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
-
-        auth.anyRequest().authenticated();
     }
 
     private void addAllowedMethods(CorsConfiguration configuration) {
@@ -142,6 +153,13 @@ public class SecurityConfig {
         for (String header : PERMITTED_HEADERS) {
             configuration.addAllowedHeader(header);
         }
+    }
+
+    private static String[] mergePaths(String[] first, String[] second) {
+        String[] merged = new String[first.length + second.length];
+        System.arraycopy(first, 0, merged, 0, first.length);
+        System.arraycopy(second, 0, merged, first.length, second.length);
+        return merged;
     }
 
 }

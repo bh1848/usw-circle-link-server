@@ -4,7 +4,7 @@ import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.TokenException;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
-import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
+import com.USWCicrcleLink.server.global.security.jwt.dto.AccessTokenResponse;
 import com.USWCicrcleLink.server.global.security.jwt.refresh.domain.RefreshTokenSession;
 import com.USWCicrcleLink.server.global.security.jwt.refresh.store.RefreshTokenStore;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +26,8 @@ public class RefreshTokenService {
     private final RefreshTokenStore refreshTokenStore;
     private final RefreshTokenCookieService refreshTokenCookieService;
 
-    public String issueRefreshToken(UUID uuid, Role role, HttpServletResponse response) {
-        invalidateByUser(uuid);
+    public void issue(UUID uuid, Role role, HttpServletResponse response) {
+        invalidate(uuid);
 
         String refreshToken = UUID.randomUUID().toString();
         RefreshTokenSession session = new RefreshTokenSession(refreshToken, uuid, role, REFRESH_TOKEN_EXPIRATION_TIME);
@@ -35,10 +35,9 @@ public class RefreshTokenService {
         refreshTokenCookieService.addRefreshTokenCookie(response, refreshToken, REFRESH_TOKEN_EXPIRATION_TIME);
 
         log.debug("새로운 Refresh Token 발급 - UUID: {}, Role: {}", uuid, role);
-        return refreshToken;
     }
 
-    public RefreshTokenSession getValidatedSession(String refreshToken, HttpServletRequest request) {
+    public RefreshTokenSession validate(String refreshToken, HttpServletRequest request) {
         if (!StringUtils.hasText(refreshToken)) {
             throw new TokenException(ExceptionType.INVALID_TOKEN);
         }
@@ -58,37 +57,35 @@ public class RefreshTokenService {
         return session;
     }
 
-    public RefreshTokenSession getValidatedSessionFromRequest(HttpServletRequest request) {
-        String refreshToken = resolveRefreshToken(request);
+    public RefreshTokenSession validateFromRequest(HttpServletRequest request) {
+        String refreshToken = resolve(request);
         if (!StringUtils.hasText(refreshToken)) {
             throw new TokenException(ExceptionType.INVALID_TOKEN);
         }
-        return getValidatedSession(refreshToken, request);
+        return validate(refreshToken, request);
     }
 
-    public TokenDto rotateTokens(HttpServletRequest request, HttpServletResponse response) {
-        RefreshTokenSession session = getValidatedSessionFromRequest(request);
-        invalidateByUser(session.uuid());
-
-        String accessToken = jwtProvider.createAccessToken(session.uuid(), session.role(), response);
-        String refreshToken = issueRefreshToken(session.uuid(), session.role(), response);
-        return new TokenDto(accessToken, refreshToken);
+    public AccessTokenResponse rotate(HttpServletRequest request, HttpServletResponse response) {
+        RefreshTokenSession session = validateFromRequest(request);
+        String accessToken = jwtProvider.createAccessToken(session.uuid(), session.role());
+        issue(session.uuid(), session.role(), response);
+        return new AccessTokenResponse(accessToken);
     }
 
-    public String resolveRefreshToken(HttpServletRequest request) {
-        return refreshTokenCookieService.resolveRefreshToken(request);
+    public String resolve(HttpServletRequest request) {
+        return refreshTokenCookieService.resolve(request);
     }
 
-    public void invalidateByUser(UUID uuid) {
+    public void invalidate(UUID uuid) {
         refreshTokenStore.deleteByUser(uuid);
     }
 
-    public void invalidateByUserAndClearCookie(UUID uuid, HttpServletResponse response) {
-        invalidateByUser(uuid);
-        clearRefreshTokenCookie(response);
+    public void invalidateAndClearCookie(UUID uuid, HttpServletResponse response) {
+        invalidate(uuid);
+        clearCookie(response);
     }
 
-    public void clearRefreshTokenCookie(HttpServletResponse response) {
+    public void clearCookie(HttpServletResponse response) {
         refreshTokenCookieService.deleteRefreshTokenCookie(response);
     }
 }

@@ -11,7 +11,7 @@ public class RefreshTokenCookieService {
     private static final String REFRESH_TOKEN_COOKIE_TEMPLATE = REFRESH_TOKEN_COOKIE_NAME + "=%s; Path=/; HttpOnly; Max-Age=%d; SameSite=Strict; Secure";
     private static final String REFRESH_TOKEN_COOKIE_DELETE_VALUE = REFRESH_TOKEN_COOKIE_NAME + "=; Path=/; HttpOnly; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
 
-    public String resolveRefreshToken(HttpServletRequest request) {
+    public String resolve(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return null;

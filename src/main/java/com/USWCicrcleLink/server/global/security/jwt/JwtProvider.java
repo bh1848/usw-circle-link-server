@@ -16,7 +16,6 @@ import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,7 +54,7 @@ public class JwtProvider {
         this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createAccessToken(UUID uuid, Role role, HttpServletResponse response) {
+    public String createAccessToken(UUID uuid, Role role) {
         UserDetails userDetails = userDetailsServiceManager.loadUserByUuidAndRole(uuid, role);
         Claims claims = Jwts.claims().setSubject(uuid.toString());
         claims.put(ROLE_CLAIM, role.name());
@@ -72,8 +71,6 @@ public class JwtProvider {
                 .setExpiration(new Date(now.getTime() + ACCESS_TOKEN_EXPIRATION_TIME))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
-
-        response.setHeader(AUTHORIZATION_HEADER, BEARER_PREFIX + accessToken);
         return accessToken;
     }
 

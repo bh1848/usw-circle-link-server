@@ -23,11 +23,8 @@ public class ClubLeaderLoginController {
 
     private final ClubLeaderLoginService clubLeaderLoginService;
 
-    /**
-     * 로그인 (Leader)
-     */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LeaderLoginResponse>> LeaderLogin(@RequestBody @Validated(ValidationSequence.class) LeaderLoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<LeaderLoginResponse>> leaderLogin(@RequestBody @Validated(ValidationSequence.class) LeaderLoginRequest request, HttpServletResponse response) {
         LeaderLoginResponse leaderLoginResponse = clubLeaderLoginService.leaderLogin(request, response);
         ApiResponse<LeaderLoginResponse> apiResponse = new ApiResponse<>("동아리 회장 로그인 성공", leaderLoginResponse);
         return ResponseEntity.ok(apiResponse);

@@ -30,9 +30,6 @@ public class ClubLeaderLoginService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
 
-    /**
-     * 로그인 (Leader)
-     */
     @RateLimite(action = "WEB_LOGIN")
     public LeaderLoginResponse leaderLogin(LeaderLoginRequest request, HttpServletResponse response) {
         Leader leader = leaderRepository.findByLeaderAccount(request.getLeaderAccount())
@@ -46,10 +43,10 @@ public class ClubLeaderLoginService {
                 .orElseThrow(() -> new UserException(ExceptionType.USER_NOT_EXISTS));
 
         UUID leaderUUID = leader.getLeaderUUID();
-        String accessToken = jwtProvider.createAccessToken(leaderUUID, leader.getRole(), response);
-        String refreshToken = refreshTokenService.issueRefreshToken(leaderUUID, leader.getRole(), response);
+        String accessToken = jwtProvider.createAccessToken(leaderUUID, leader.getRole());
+        refreshTokenService.issue(leaderUUID, leader.getRole(), response);
 
         log.debug("Leader 로그인 성공 - uuid: {}, 클럽 UUID: {}", leaderUUID, clubUUID);
-        return new LeaderLoginResponse(accessToken, refreshToken, Role.LEADER, clubUUID, leader.isAgreedTerms());
+        return new LeaderLoginResponse(accessToken, Role.LEADER, clubUUID, leader.isAgreedTerms());
     }
 }

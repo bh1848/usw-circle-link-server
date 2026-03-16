@@ -5,7 +5,7 @@ import com.USWCicrcleLink.server.email.service.EmailTokenService;
 import com.USWCicrcleLink.server.global.bucket4j.RateLimite;
 import com.USWCicrcleLink.server.global.exception.errortype.EmailTokenException;
 import com.USWCicrcleLink.server.global.response.ApiResponse;
-import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
+import com.USWCicrcleLink.server.global.security.jwt.dto.AccessTokenResponse;
 import com.USWCicrcleLink.server.global.validation.support.ValidationSequence;
 import com.USWCicrcleLink.server.user.domain.AuthToken;
 import com.USWCicrcleLink.server.user.domain.ExistingMember.ClubMemberTemp;
@@ -183,14 +183,11 @@ public class UserController {
         return new ApiResponse<>("비밀번호가 변경되었습니다.");
     }
 
-    /**
-     * User 로그인
-     */
     @PostMapping("/login")
     @RateLimite(action = "APP_LOGIN")
-    public ResponseEntity<ApiResponse<TokenDto>> userLogin(@RequestBody @Validated(ValidationSequence.class) LogInRequest request, HttpServletResponse response) {
-        TokenDto tokenDto = userService.userLogin(request, response);
-        return ResponseEntity.ok(new ApiResponse<>("로그인 성공", tokenDto));
+    public ResponseEntity<ApiResponse<AccessTokenResponse>> userLogin(@RequestBody @Validated(ValidationSequence.class) LogInRequest request, HttpServletResponse response) {
+        AccessTokenResponse tokenResponse = userService.userLogin(request, response);
+        return ResponseEntity.ok(new ApiResponse<>("로그인 성공", tokenResponse));
     }
 
     // 회원 탈퇴 요청 및 메일 전송

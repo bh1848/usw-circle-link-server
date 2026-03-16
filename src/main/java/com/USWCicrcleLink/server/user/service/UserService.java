@@ -11,10 +11,10 @@ import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.*;
 import com.USWCicrcleLink.server.global.security.Integration.service.IntegrationAuthService;
 import com.USWCicrcleLink.server.global.security.details.CustomUserDetails;
+import com.USWCicrcleLink.server.global.security.jwt.dto.AccessTokenResponse;
 import com.USWCicrcleLink.server.global.security.jwt.refresh.domain.RefreshTokenSession;
 import com.USWCicrcleLink.server.global.security.jwt.refresh.service.RefreshTokenService;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
-import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
 import com.USWCicrcleLink.server.profile.domain.Profile;
 import com.USWCicrcleLink.server.profile.repository.ProfileRepository;
 import com.USWCicrcleLink.server.profile.service.ProfileService;
@@ -107,7 +107,7 @@ public class UserService {
             throw new UserException(ExceptionType.PROFILE_UPDATE_FAIL);
         }
 
-        refreshTokenService.invalidateByUserAndClearCookie(user.getUserUUID(), response);
+        refreshTokenService.invalidateAndClearCookie(user.getUserUUID(), response);
         log.info("비밀번호 변경 완료: {}", user.getUserId());
     }
 
@@ -287,7 +287,7 @@ public class UserService {
 
         user.updateUserPw(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
-        refreshTokenService.invalidateByUser(user.getUserUUID());
+        refreshTokenService.invalidate(user.getUserUUID());
 
         log.debug("새로운 비밀번호 변경 완료 userUUID = {}", user.getUserUUID());
     }
@@ -329,7 +329,7 @@ public class UserService {
     /**
      * User 로그인
      */
-    public TokenDto userLogin(LogInRequest request, HttpServletResponse response) {
+    public AccessTokenResponse userLogin(LogInRequest request, HttpServletResponse response) {
 
         User user = userRepository.findByUserAccount(request.getAccount()).orElse(null);
 
@@ -356,8 +356,8 @@ public class UserService {
         log.debug("프로필 조회 성공 - 사용자 UUID: {}, 회원 타입: {}", userUUID, profile.getMemberType());
 
 
-        String accessToken = jwtProvider.createAccessToken(userUUID, user.getRole(), response);
-        String refreshToken = refreshTokenService.issueRefreshToken(userUUID, user.getRole(), response);
+        String accessToken = jwtProvider.createAccessToken(userUUID, user.getRole());
+        refreshTokenService.issue(userUUID, user.getRole(), response);
 
         // FCM 토큰 업데이트
         if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {
@@ -367,7 +367,7 @@ public class UserService {
         }
 
         log.debug("로그인 성공, UUID: {}", userUUID);
-        return new TokenDto(accessToken, refreshToken);
+        return new AccessTokenResponse(accessToken);
     }
 
     public EmailToken checkEmailDuplication(String email) {
@@ -416,7 +416,7 @@ public class UserService {
      * 회원 탈퇴 (User)
      */
     public void cancelMembership(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = refreshTokenService.resolveRefreshToken(request);
+        String refreshToken = refreshTokenService.resolve(request);
 
         if (refreshToken == null) {
             integrationAuthService.logout(request, response);
@@ -424,7 +424,7 @@ public class UserService {
         }
 
         try {
-            RefreshTokenSession session = refreshTokenService.getValidatedSession(refreshToken, request);
+            RefreshTokenSession session = refreshTokenService.validate(refreshToken, request);
             UUID userUUID = session.uuid();
 
             profileRepository.findByUser_UserUUID(userUUID).ifPresent(profile -> {
