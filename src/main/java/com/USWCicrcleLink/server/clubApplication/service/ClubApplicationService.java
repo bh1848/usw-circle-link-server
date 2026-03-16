@@ -18,6 +18,7 @@ import com.USWCicrcleLink.server.profile.repository.ProfileRepository;
 import com.USWCicrcleLink.server.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -56,9 +57,6 @@ public class ClubApplicationService {
             if (profile.getUserHp().equals(member.getUserHp())) {
                 throw new ClubApplicationException(ExceptionType.PHONE_NUMBER_ALREADY_REGISTERED);
             }
-        }
-
-        for (Profile member : clubMembers) {
             if (profile.getStudentNumber().equals(member.getStudentNumber())) {
                 throw new ClubApplicationException(ExceptionType.STUDENT_NUMBER_ALREADY_REGISTERED);
             }
@@ -94,7 +92,11 @@ public class ClubApplicationService {
                 .clubApplicationStatus(ClubApplicationStatus.WAIT)
                 .build();
 
-        clubApplicationRepository.save(clubApplication);
+        try {
+            clubApplicationRepository.saveAndFlush(clubApplication);
+        } catch (DataIntegrityViolationException e) {
+            throw new ClubApplicationException(ExceptionType.ALREADY_APPLIED);
+        }
         log.debug("동아리 지원서 제출 성공 - ClubUUID: {}, Status: {}", clubUUID, ClubApplicationStatus.WAIT);
     }
 
