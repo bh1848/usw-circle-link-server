@@ -78,7 +78,6 @@ class ClubApplicationServiceTest {
         given(profileRepository.findByUser_UserUUID(userUUID)).willReturn(Optional.of(profile));
     }
 
-    // ===== checkIfCanApply =====
 
     @Nested
     class checkIfCanApply_테스트 {
@@ -179,7 +178,6 @@ class ClubApplicationServiceTest {
         }
     }
 
-    // ===== getGoogleFormUrlByClubUUID =====
 
     @Nested
     class getGoogleFormUrlByClubUUID_테스트 {
@@ -231,7 +229,6 @@ class ClubApplicationServiceTest {
         }
     }
 
-    // ===== submitClubApplication =====
 
     @Nested
     class submitClubApplication_테스트 {
