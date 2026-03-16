@@ -27,10 +27,10 @@ public class RefreshTokenCookieService {
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken, long expirationTimeMillis) {
         int maxAge = (int) (expirationTimeMillis / 1000);
-        response.setHeader("Set-Cookie", String.format(REFRESH_TOKEN_COOKIE_TEMPLATE, refreshToken, maxAge));
+        response.addHeader("Set-Cookie", String.format(REFRESH_TOKEN_COOKIE_TEMPLATE, refreshToken, maxAge));
     }
 
     public void deleteRefreshTokenCookie(HttpServletResponse response) {
-        response.setHeader("Set-Cookie", REFRESH_TOKEN_COOKIE_DELETE_VALUE);
+        response.addHeader("Set-Cookie", REFRESH_TOKEN_COOKIE_DELETE_VALUE);
     }
 }

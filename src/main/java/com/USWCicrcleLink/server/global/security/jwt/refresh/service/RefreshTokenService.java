@@ -67,6 +67,10 @@ public class RefreshTokenService {
 
     public AccessTokenResponse rotate(HttpServletRequest request, HttpServletResponse response) {
         RefreshTokenSession session = validateFromRequest(request);
+        return rotateSession(session, response);
+    }
+
+    private AccessTokenResponse rotateSession(RefreshTokenSession session, HttpServletResponse response) {
         String accessToken = jwtProvider.createAccessToken(session.uuid(), session.role());
         issue(session.uuid(), session.role(), response);
         return new AccessTokenResponse(accessToken);
