@@ -3,18 +3,14 @@ package com.USWCicrcleLink.server.admin.notice.service;
 import com.USWCicrcleLink.server.admin.admin.domain.Admin;
 import com.USWCicrcleLink.server.admin.notice.domain.Notice;
 import com.USWCicrcleLink.server.admin.notice.domain.NoticePhoto;
-import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeCreationRequest;
-import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeListResponse;
-import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticePageListResponse;
-import com.USWCicrcleLink.server.admin.notice.dto.AdminNoticeUpdateRequest;
-import com.USWCicrcleLink.server.admin.notice.dto.NoticeDetailResponse;
+import com.USWCicrcleLink.server.admin.notice.dto.*;
 import com.USWCicrcleLink.server.admin.notice.repository.NoticePhotoRepository;
 import com.USWCicrcleLink.server.admin.notice.repository.NoticeRepository;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.NoticeException;
-import com.USWCicrcleLink.server.global.security.details.CustomAdminDetails;
 import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;
 import com.USWCicrcleLink.server.global.s3File.dto.S3FileResponse;
+import com.USWCicrcleLink.server.global.security.details.CustomAdminDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -30,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -75,7 +72,7 @@ public class AdminNoticeService {
         List<String> noticePhotoUrls = noticePhotoRepository.findByNotice(notice).stream()
                 .sorted(Comparator.comparingInt(NoticePhoto::getOrder))
                 .map(photo -> s3FileUploadService.generatePresignedGetUrl(photo.getNoticePhotoS3Key()))
-                .collect(Collectors.toList());
+                .toList();
 
         log.debug("공지사항 상세 조회 성공 - ID: {}", notice.getNoticeId());
 
@@ -132,12 +129,6 @@ public class AdminNoticeService {
         log.info("공지사항 삭제 완료 - ID: {}", notice.getNoticeId());
     }
 
-    private Admin getAuthenticatedAdmin() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
-        return adminDetails.admin();
-    }
-
     private void validatePhotoOrdersAndPhotos(List<Integer> photoOrders, List<MultipartFile> noticePhotos) {
         if (noticePhotos != null && !noticePhotos.isEmpty()) {
             if (photoOrders == null || noticePhotos.size() != photoOrders.size()) {
@@ -158,8 +149,13 @@ public class AdminNoticeService {
                 .map(NoticePhoto::getNoticePhotoS3Key)
                 .toList();
 
-        s3FileUploadService.deleteFiles(fileNames);
         noticePhotoRepository.deleteAllInBatch(existingPhotos);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                s3FileUploadService.deleteFiles(fileNames);
+            }
+        });
 
         log.debug("공지사항 사진 일괄 삭제 완료 - ID: {}, 삭제된 파일 수: {}", notice.getNoticeId(), fileNames.size());
     }
@@ -197,4 +193,11 @@ public class AdminNoticeService {
         log.debug("공지사항 사진 일괄 업로드 완료 - 총 {}개", newPhotoList.size());
         return presignedUrls;
     }
+
+    private Admin getAuthenticatedAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
+        return adminDetails.admin();
+    }
+
 }

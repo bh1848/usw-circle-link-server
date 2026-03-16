@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +100,12 @@ public class ClubRepositoryCustomImpl implements ClubRepositoryCustom {
                 .executeUpdate();
 
         if (!s3Keys.isEmpty()) {
-            s3FileUploadService.deleteFiles(s3Keys);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    s3FileUploadService.deleteFiles(s3Keys);
+                }
+            });
         }
 
         em.createQuery("DELETE FROM Club c WHERE c.clubId = :clubId")
