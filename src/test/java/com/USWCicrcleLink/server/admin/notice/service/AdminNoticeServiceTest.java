@@ -35,7 +35,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AdminNoticeServiceTest {
@@ -65,7 +68,6 @@ class AdminNoticeServiceTest {
         given(authentication.getPrincipal()).willReturn(new CustomAdminDetails(admin));
     }
 
-    // ===== createNotice =====
 
     @Nested
     class createNotice_테스트 {
@@ -127,7 +129,6 @@ class AdminNoticeServiceTest {
         }
     }
 
-    // ===== updateNotice =====
 
     @Nested
     class updateNotice_테스트 {
@@ -185,7 +186,6 @@ class AdminNoticeServiceTest {
         }
     }
 
-    // ===== deleteNotice =====
 
     @Nested
     class deleteNotice_테스트 {

@@ -42,6 +42,9 @@ import java.util.UUID;
 @Slf4j
 public class AdminClubService {
 
+    private static final String EMPTY_VALUE = "";
+    private static final int DEFAULT_CLUB_INTRO_PHOTO_COUNT = 5;
+
     private final LeaderRepository leaderRepository;
     private final ClubRepository clubRepository;
     private final ClubIntroRepository clubIntroRepository;
@@ -87,9 +90,9 @@ public class AdminClubService {
         Club club = Club.builder()
                 .clubName(request.getClubName())
                 .department(request.getDepartment())
-                .leaderName("")
-                .leaderHp("")
-                .clubInsta("")
+                .leaderName(EMPTY_VALUE)
+                .leaderHp(EMPTY_VALUE)
+                .clubInsta(EMPTY_VALUE)
                 .clubRoomNumber(request.getClubRoomNumber())
                 .build();
 
@@ -118,8 +121,8 @@ public class AdminClubService {
         clubMainPhotoRepository.save(
                 ClubMainPhoto.builder()
                         .club(club)
-                        .clubMainPhotoName("")
-                        .clubMainPhotoS3Key("")
+                        .clubMainPhotoName(EMPTY_VALUE)
+                        .clubMainPhotoS3Key(EMPTY_VALUE)
                         .build()
         );
     }
@@ -128,8 +131,8 @@ public class AdminClubService {
         return clubIntroRepository.save(
                 ClubIntro.builder()
                         .club(club)
-                        .clubIntro("")
-                        .googleFormUrl("")
+                        .clubIntro(EMPTY_VALUE)
+                        .googleFormUrl(EMPTY_VALUE)
                         .recruitmentStatus(RecruitmentStatus.CLOSE)
                         .build()
         );
@@ -138,17 +141,17 @@ public class AdminClubService {
     private void createClubIntroPhotos(ClubIntro clubIntro) {
         List<ClubIntroPhoto> introPhotos = new ArrayList<>();
 
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i <= DEFAULT_CLUB_INTRO_PHOTO_COUNT; i++) {
             introPhotos.add(ClubIntroPhoto.builder()
                     .clubIntro(clubIntro)
-                    .clubIntroPhotoName("")
-                    .clubIntroPhotoS3Key("")
+                    .clubIntroPhotoName(EMPTY_VALUE)
+                    .clubIntroPhotoS3Key(EMPTY_VALUE)
                     .order(i)
                     .build());
         }
 
         clubIntroPhotoRepository.saveAll(introPhotos);
-        log.debug("기본 동아리 소개 사진 5개 생성 완료 - Club ID: {}", clubIntro.getClub().getClubId());
+        log.debug("기본 동아리 소개 사진 {}개 생성 완료 - Club ID: {}", DEFAULT_CLUB_INTRO_PHOTO_COUNT, clubIntro.getClub().getClubId());
     }
 
     public void validateLeaderAccount(String leaderAccount) {
