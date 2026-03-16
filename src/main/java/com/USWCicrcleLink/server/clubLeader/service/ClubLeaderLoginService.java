@@ -44,8 +44,8 @@ public class ClubLeaderLoginService {
                 .orElseThrow(() -> new UserException(ExceptionType.USER_NOT_EXISTS));
 
         UUID leaderUUID = leader.getLeaderUUID();
-        String accessToken = jwtProvider.createAccessToken(leaderUUID, response);
-        String refreshToken = jwtProvider.createRefreshToken(leaderUUID, response);
+        String accessToken = jwtProvider.createAccessToken(leaderUUID, leader.getRole(), response);
+        String refreshToken = jwtProvider.createRefreshToken(leaderUUID, leader.getRole(), response);
 
         log.debug("Leader 로그인 성공 - uuid: {}, 클럽 UUID: {}", leaderUUID, clubUUID);
         return new LeaderLoginResponse(accessToken, refreshToken, Role.LEADER, clubUUID, leader.isAgreedTerms());

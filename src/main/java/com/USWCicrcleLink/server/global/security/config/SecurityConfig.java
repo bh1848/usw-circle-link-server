@@ -1,16 +1,17 @@
 package com.USWCicrcleLink.server.global.security.config;
 
 import com.USWCicrcleLink.server.global.security.exception.CustomAuthenticationEntryPoint;
-import com.USWCicrcleLink.server.global.security.jwt.filter.JwtFilter;
 import com.USWCicrcleLink.server.global.security.jwt.filter.LoggingFilter;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
 import com.USWCicrcleLink.server.global.security.jwt.SecurityProperties;
+import com.USWCicrcleLink.server.global.security.jwt.filter.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,6 +25,37 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_LEADER = "LEADER";
+    private static final String ROLE_USER = "USER";
+    private static final String[] PERMITTED_HEADERS = {
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "emailToken_uuid",
+            "uuid"
+    };
+    private static final HttpMethod[] ALLOWED_METHODS = {
+            HttpMethod.GET,
+            HttpMethod.POST,
+            HttpMethod.PUT,
+            HttpMethod.PATCH,
+            HttpMethod.DELETE,
+            HttpMethod.OPTIONS
+    };
+
+    private static final String[] ADMIN_SHARED_READ_PATHS = {"/admin/clubs", "/admin/clubs/{clubUUID}"};
+    private static final String[] NOTICE_SHARED_READ_PATHS = {"/notices/{noticeUUID}", "/notices"};
+    private static final String[] ADMIN_ALL_PATHS = {"/admin/**"};
+    private static final String[] NOTICE_ADMIN_PATHS = {"/notices/**"};
+    private static final String[] USER_PATCH_PATHS = {"/profiles/change", "/users/userpw", "/club-leader/fcmtoken"};
+    private static final String[] USER_GET_PATHS = {"/my-notices", "/mypages/my-clubs", "/mypages/club-applications", "/profiles/me", "/my-notices/{noticeUUID}/details"};
+    private static final String[] USER_EXIT_POST_PATHS = {"/users/exit/send-code"};
+    private static final String[] USER_EXIT_DELETE_PATHS = {"/users/exit"};
+    private static final String[] USER_APPLY_PATHS = {"/apply/**"};
+    private static final String[] LEADER_ALL_PATHS = {"/club-leader/**"};
 
     private final JwtProvider jwtProvider;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
@@ -45,46 +77,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // CSRF 보호 비활성화
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(customAuthenticationEntryPoint))
-                // 공개
-                .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(securityProperties.getPermitAllPaths().toArray(new String[0])).permitAll();
-
-                    auth.requestMatchers(HttpMethod.GET, "/admin/clubs", "/admin/clubs/{clubUUID}").hasAnyRole("ADMIN", "LEADER");
-                    auth.requestMatchers(HttpMethod.GET, "/notices/{noticeUUID}", "/notices").hasAnyRole("ADMIN", "LEADER");
-
-                    // ADMIN
-                    auth.requestMatchers(HttpMethod.GET,"/admin/**").hasRole("ADMIN");
-                    auth.requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN");
-                    auth.requestMatchers(HttpMethod.PATCH, "/admin/**").hasRole("LEADER");
-                    auth.requestMatchers(HttpMethod.DELETE, "/admin/**").hasRole("ADMIN");
-                    auth.requestMatchers(HttpMethod.PUT, "/admin/**").hasRole("ADMIN");
-
-                    // ADMIN - Notice
-                    auth.requestMatchers(HttpMethod.POST, "/notices/**").hasRole("ADMIN");
-                    auth.requestMatchers(HttpMethod.DELETE, "/notices/**").hasRole("ADMIN");
-
-                    // USER
-                    auth.requestMatchers(HttpMethod.PATCH, "/profiles/change","/users/userpw","/club-leader/fcmtoken").hasRole("USER");
-                    auth.requestMatchers(HttpMethod.GET,"/my-notices","/mypages/my-clubs","/mypages/club-applications","/profiles/me","/my-notices/{noticeUUID}/details").hasRole("USER");
-                    auth.requestMatchers(HttpMethod.DELETE, "/users/exit").hasRole("USER");
-                    auth.requestMatchers(HttpMethod.POST, "/users/exit/send-code").hasRole("USER");
-                    auth.requestMatchers(HttpMethod.POST, "/apply/**").hasRole("USER");
-                    auth.requestMatchers(HttpMethod.GET, "/apply/**").hasRole("USER");
-
-                    // LEADER
-                    auth.requestMatchers(HttpMethod.POST, "/club-leader/**").hasRole("LEADER");
-                    auth.requestMatchers(HttpMethod.GET, "/club-leader/**").hasRole("LEADER");
-                    auth.requestMatchers(HttpMethod.PATCH, "/club-leader/**").hasRole("LEADER");
-                    auth.requestMatchers(HttpMethod.DELETE, "/club-leader/**").hasRole("LEADER");
-                    auth.requestMatchers(HttpMethod.PUT, "/club-leader/**").hasRole("LEADER");
-
-                    // 기타 모든 요청 인증 필요
-                    auth.anyRequest().authenticated();
-                })
+                .authorizeHttpRequests(this::configureAuthorization)
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(loggingFilter(), JwtFilter.class);
         return http.build();
@@ -93,35 +90,58 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        // 특정 출처 허용
         configuration.addAllowedOriginPattern(allowedOrigin);
-
-        // 허용할 HTTP 메서드 명시
-        configuration.addAllowedMethod(HttpMethod.GET);
-        configuration.addAllowedMethod(HttpMethod.POST);
-        configuration.addAllowedMethod(HttpMethod.PUT);
-        configuration.addAllowedMethod(HttpMethod.PATCH);
-        configuration.addAllowedMethod(HttpMethod.DELETE);
-        configuration.addAllowedMethod(HttpMethod.OPTIONS); // Preflight 요청에 사용되는 OPTIONS 메서드 허용
-
-        // 허용할 헤더 명시
-        configuration.addAllowedHeader("Authorization");
-        configuration.addAllowedHeader("Content-Type");
-        configuration.addAllowedHeader("X-Requested-With");
-        configuration.addAllowedHeader("Accept");
-        configuration.addAllowedHeader("Origin");
-        configuration.addAllowedHeader("emailToken_uuid");
-        configuration.addAllowedHeader("uuid");
-
-        // 자격 증명 허용
+        addAllowedMethods(configuration);
+        addAllowedHeaders(configuration);
         configuration.setAllowCredentials(true);
 
-        // CORS 설정을 모든 경로에 적용
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
+    }
+
+    private void configureAuthorization(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(securityProperties.getPermitAllPaths().toArray(new String[0])).permitAll();
+
+        auth.requestMatchers(HttpMethod.GET, ADMIN_SHARED_READ_PATHS).hasAnyRole(ROLE_ADMIN, ROLE_LEADER);
+        auth.requestMatchers(HttpMethod.GET, NOTICE_SHARED_READ_PATHS).hasAnyRole(ROLE_ADMIN, ROLE_LEADER);
+
+        auth.requestMatchers(HttpMethod.GET, ADMIN_ALL_PATHS).hasRole(ROLE_ADMIN);
+        auth.requestMatchers(HttpMethod.POST, ADMIN_ALL_PATHS).hasRole(ROLE_ADMIN);
+        auth.requestMatchers(HttpMethod.PATCH, ADMIN_ALL_PATHS).hasRole(ROLE_LEADER);
+        auth.requestMatchers(HttpMethod.DELETE, ADMIN_ALL_PATHS).hasRole(ROLE_ADMIN);
+        auth.requestMatchers(HttpMethod.PUT, ADMIN_ALL_PATHS).hasRole(ROLE_ADMIN);
+
+        auth.requestMatchers(HttpMethod.POST, NOTICE_ADMIN_PATHS).hasRole(ROLE_ADMIN);
+        auth.requestMatchers(HttpMethod.DELETE, NOTICE_ADMIN_PATHS).hasRole(ROLE_ADMIN);
+
+        auth.requestMatchers(HttpMethod.PATCH, USER_PATCH_PATHS).hasRole(ROLE_USER);
+        auth.requestMatchers(HttpMethod.GET, USER_GET_PATHS).hasRole(ROLE_USER);
+        auth.requestMatchers(HttpMethod.DELETE, USER_EXIT_DELETE_PATHS).hasRole(ROLE_USER);
+        auth.requestMatchers(HttpMethod.POST, USER_EXIT_POST_PATHS).hasRole(ROLE_USER);
+        auth.requestMatchers(HttpMethod.POST, USER_APPLY_PATHS).hasRole(ROLE_USER);
+        auth.requestMatchers(HttpMethod.GET, USER_APPLY_PATHS).hasRole(ROLE_USER);
+
+        auth.requestMatchers(HttpMethod.POST, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
+        auth.requestMatchers(HttpMethod.GET, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
+        auth.requestMatchers(HttpMethod.PATCH, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
+        auth.requestMatchers(HttpMethod.DELETE, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
+        auth.requestMatchers(HttpMethod.PUT, LEADER_ALL_PATHS).hasRole(ROLE_LEADER);
+
+        auth.anyRequest().authenticated();
+    }
+
+    private void addAllowedMethods(CorsConfiguration configuration) {
+        for (HttpMethod method : ALLOWED_METHODS) {
+            configuration.addAllowedMethod(method);
+        }
+    }
+
+    private void addAllowedHeaders(CorsConfiguration configuration) {
+        for (String header : PERMITTED_HEADERS) {
+            configuration.addAllowedHeader(header);
+        }
     }
 
 }

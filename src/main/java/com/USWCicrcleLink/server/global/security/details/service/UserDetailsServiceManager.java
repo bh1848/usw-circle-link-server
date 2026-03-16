@@ -2,28 +2,31 @@ package com.USWCicrcleLink.server.global.security.details.service;
 
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.UserException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class UserDetailsServiceManager {
 
-    private final List<RoleBasedUserDetailsService> userDetailsServices;
+    private final Map<Role, RoleBasedUserDetailsService> userDetailsServices;
 
-    public UserDetails loadUserByUuid(UUID uuid) {
-        for (RoleBasedUserDetailsService service : userDetailsServices) {
-            try {
-                return service.loadUserByUuid(uuid);
-            } catch (UserException ignored) {
-            }
+    public UserDetailsServiceManager(List<RoleBasedUserDetailsService> userDetailsServices) {
+        this.userDetailsServices = new EnumMap<>(Role.class);
+        userDetailsServices.forEach(service -> this.userDetailsServices.put(service.getSupportedRole(), service));
+    }
+
+    public UserDetails loadUserByUuidAndRole(UUID uuid, Role role) {
+        RoleBasedUserDetailsService service = userDetailsServices.get(role);
+        if (service == null) {
+            throw new UserException(ExceptionType.USER_NOT_EXISTS);
         }
-        throw new UserException(ExceptionType.USER_NOT_EXISTS);
+
+        return service.loadUserByUuid(uuid);
     }
 }

@@ -5,6 +5,7 @@ import com.USWCicrcleLink.server.clubLeader.repository.LeaderRepository;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.UserException;
 import com.USWCicrcleLink.server.global.security.details.CustomLeaderDetails;
+import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,11 @@ import java.util.UUID;
 public class CustomLeaderDetailsService implements RoleBasedUserDetailsService {
 
     private final LeaderRepository leaderRepository;
+
+    @Override
+    public Role getSupportedRole() {
+        return Role.LEADER;
+    }
 
     @Override
     public UserDetails loadUserByUuid(UUID uuid) {

@@ -75,7 +75,7 @@ public class UserService {
     }
 
     //비밀번호 변경
-    public void updateNewPW(UpdatePwRequest updatePwRequest) {
+    public void updateNewPW(UpdatePwRequest updatePwRequest, HttpServletResponse response) {
 
         User user = getUserByAuth();
 
@@ -103,6 +103,9 @@ public class UserService {
             log.error("비밀번호 업데이트 실패 {}", user.getUserId());
             throw new UserException(ExceptionType.PROFILE_UPDATE_FAIL);
         }
+
+        jwtProvider.deleteRefreshToken(user.getUserUUID());
+        jwtProvider.deleteRefreshTokenCookie(response);
         log.info("비밀번호 변경 완료: {}", user.getUserId());
     }
 
@@ -282,6 +285,7 @@ public class UserService {
 
         user.updateUserPw(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
+        jwtProvider.deleteRefreshToken(user.getUserUUID());
 
         log.debug("새로운 비밀번호 변경 완료 userUUID = {}", user.getUserUUID());
     }
@@ -350,8 +354,8 @@ public class UserService {
         log.debug("프로필 조회 성공 - 사용자 UUID: {}, 회원 타입: {}", userUUID, profile.getMemberType());
 
 
-        String accessToken = jwtProvider.createAccessToken(userUUID, response);
-        String refreshToken = jwtProvider.createRefreshToken(userUUID, response);
+        String accessToken = jwtProvider.createAccessToken(userUUID, user.getRole(), response);
+        String refreshToken = jwtProvider.createRefreshToken(userUUID, user.getRole(), response);
 
         // FCM 토큰 업데이트
         if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {

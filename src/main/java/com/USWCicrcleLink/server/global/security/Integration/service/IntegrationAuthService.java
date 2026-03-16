@@ -2,6 +2,7 @@ package com.USWCicrcleLink.server.global.security.Integration.service;
 
 import com.USWCicrcleLink.server.global.exception.errortype.TokenException;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
+import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
 import com.USWCicrcleLink.server.profile.repository.ProfileRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,11 +66,12 @@ public class IntegrationAuthService {
         try {
             jwtProvider.validateRefreshToken(refreshToken, request);
             UUID uuid = jwtProvider.getUUIDFromRefreshToken(refreshToken);
+            Role role = jwtProvider.getRoleFromRefreshToken(refreshToken);
 
             jwtProvider.deleteRefreshToken(uuid);
 
-            String newAccessToken = jwtProvider.createAccessToken(uuid, response);
-            String newRefreshToken = jwtProvider.createRefreshToken(uuid, response);
+            String newAccessToken = jwtProvider.createAccessToken(uuid, role, response);
+            String newRefreshToken = jwtProvider.createRefreshToken(uuid, role, response);
 
             log.debug("토큰 갱신 성공 - UUID: {}", uuid);
             return new TokenDto(newAccessToken, newRefreshToken);

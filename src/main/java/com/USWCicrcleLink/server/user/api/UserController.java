@@ -40,8 +40,9 @@ public class UserController {
     private final EmailTokenService emailTokenService;
 
     @PatchMapping("/userpw")
-    public ApiResponse<String> updateUserPw(@Validated(ValidationSequence.class) @RequestBody UpdatePwRequest request) {
-        userService.updateNewPW(request);
+    public ApiResponse<String> updateUserPw(@Validated(ValidationSequence.class) @RequestBody UpdatePwRequest request,
+                                            HttpServletResponse response) {
+        userService.updateNewPW(request, response);
         return new ApiResponse<>("비밀번호가 성공적으로 업데이트 되었습니다.");
     }
 

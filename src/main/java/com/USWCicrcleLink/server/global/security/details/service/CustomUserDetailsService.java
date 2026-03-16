@@ -5,6 +5,7 @@ import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.ProfileException;
 import com.USWCicrcleLink.server.global.exception.errortype.UserException;
 import com.USWCicrcleLink.server.global.security.details.CustomUserDetails;
+import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import com.USWCicrcleLink.server.profile.domain.Profile;
 import com.USWCicrcleLink.server.profile.repository.ProfileRepository;
 import com.USWCicrcleLink.server.user.domain.User;
@@ -25,6 +26,11 @@ public class CustomUserDetailsService implements RoleBasedUserDetailsService {
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
     private final ClubMembersRepository clubMembersRepository;
+
+    @Override
+    public Role getSupportedRole() {
+        return Role.USER;
+    }
 
     @Override
     public UserDetails loadUserByUuid(UUID uuid) {

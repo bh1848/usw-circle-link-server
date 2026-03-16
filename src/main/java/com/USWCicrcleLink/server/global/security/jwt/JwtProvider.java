@@ -6,13 +6,13 @@ import com.USWCicrcleLink.server.global.exception.errortype.UserException;
 import com.USWCicrcleLink.server.global.security.details.CustomLeaderDetails;
 import com.USWCicrcleLink.server.global.security.details.CustomUserDetails;
 import com.USWCicrcleLink.server.global.security.details.service.UserDetailsServiceManager;
+import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import com.USWCicrcleLink.server.global.security.jwt.domain.TokenValidationResult;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
-import java.nio.charset.StandardCharsets;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
@@ -30,10 +30,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -44,8 +44,10 @@ public class JwtProvider {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";
     private static final String CLUB_UUID_CLAIM = "clubUUID";
+    private static final String ROLE_CLAIM = "role";
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
-    private static final String REFRESH_TOKEN_KEY_PREFIX = "refreshToken:";
+    private static final String REFRESH_TOKEN_TOKEN_KEY_PREFIX = "refreshToken:token:";
+    private static final String REFRESH_TOKEN_USER_KEY_PREFIX = "refreshToken:user:";
     private static final String REFRESH_TOKEN_COOKIE_TEMPLATE = REFRESH_TOKEN_COOKIE_NAME + "=%s; Path=/; HttpOnly; Max-Age=%d; SameSite=Strict; Secure";
     private static final String REFRESH_TOKEN_COOKIE_DELETE_VALUE = REFRESH_TOKEN_COOKIE_NAME + "=; Path=/; HttpOnly; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
     private static final long ACCESS_TOKEN_EXPIRATION_TIME = 1_800_000L;
@@ -64,9 +66,10 @@ public class JwtProvider {
         this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createAccessToken(UUID uuid, HttpServletResponse response) {
-        UserDetails userDetails = userDetailsServiceManager.loadUserByUuid(uuid);
+    public String createAccessToken(UUID uuid, Role role, HttpServletResponse response) {
+        UserDetails userDetails = userDetailsServiceManager.loadUserByUuidAndRole(uuid, role);
         Claims claims = Jwts.claims().setSubject(uuid.toString());
+        claims.put(ROLE_CLAIM, role.name());
 
         UUID clubUUID = extractClubUuid(userDetails);
         if (clubUUID != null) {
@@ -83,11 +86,6 @@ public class JwtProvider {
 
         response.setHeader(AUTHORIZATION_HEADER, BEARER_PREFIX + accessToken);
         return accessToken;
-    }
-
-    public UserDetails getUserDetails(String accessToken) {
-        UUID uuid = getUUIDFromAccessToken(accessToken);
-        return userDetailsServiceManager.loadUserByUuid(uuid);
     }
 
     public TokenValidationResult validateAccessToken(String accessToken) {
@@ -117,21 +115,24 @@ public class JwtProvider {
     }
 
     public Authentication getAuthentication(String accessToken) {
-        UserDetails userDetails = getUserDetails(accessToken);
+        UUID uuid = getUUIDFromAccessToken(accessToken);
+        Role role = getRoleFromAccessToken(accessToken);
+        UserDetails userDetails = userDetailsServiceManager.loadUserByUuidAndRole(uuid, role);
         List<SimpleGrantedAuthority> authorities = userDetails.getAuthorities().stream()
                 .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
                 .toList();
         return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
     }
 
-    public String createRefreshToken(UUID uuid, HttpServletResponse response) {
+    public String createRefreshToken(UUID uuid, Role role, HttpServletResponse response) {
         deleteRefreshToken(uuid);
 
         String newRefreshToken = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set(getRefreshTokenKey(newRefreshToken), uuid.toString(), REFRESH_TOKEN_EXPIRATION_TIME, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(getRefreshTokenTokenKey(newRefreshToken), buildRefreshTokenValue(uuid, role), REFRESH_TOKEN_EXPIRATION_TIME, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(getRefreshTokenUserKey(uuid), newRefreshToken, REFRESH_TOKEN_EXPIRATION_TIME, TimeUnit.MILLISECONDS);
 
         setRefreshTokenCookie(response, newRefreshToken);
-        log.debug("새로운 Refresh Token 발급 - UUID: {}", uuid);
+        log.debug("새로운 Refresh Token 발급 - UUID: {}, Role: {}", uuid, role);
         return newRefreshToken;
     }
 
@@ -140,9 +141,15 @@ public class JwtProvider {
             throw new TokenException(ExceptionType.INVALID_TOKEN);
         }
 
-        boolean existsInRedis = redisTemplate.opsForValue().get(getRefreshTokenKey(refreshToken)) != null;
-        if (!existsInRedis) {
+        RefreshTokenPayload payload = getRefreshTokenPayload(refreshToken);
+        if (payload == null) {
             log.warn("Refresh Token 검증 실패 - IP: {} | 요청 경로: {}", request.getRemoteAddr(), request.getRequestURI());
+            throw new TokenException(ExceptionType.INVALID_TOKEN);
+        }
+
+        String storedRefreshToken = redisTemplate.opsForValue().get(getRefreshTokenUserKey(payload.uuid()));
+        if (!refreshToken.equals(storedRefreshToken)) {
+            log.warn("Refresh Token 검증 실패 - 사용자 매핑 불일치 - UUID: {}", payload.uuid());
             throw new TokenException(ExceptionType.INVALID_TOKEN);
         }
 
@@ -150,29 +157,33 @@ public class JwtProvider {
     }
 
     public UUID getUUIDFromRefreshToken(String refreshToken) {
-        String storedUuid = redisTemplate.opsForValue().get(getRefreshTokenKey(refreshToken));
-        if (storedUuid == null) {
+        RefreshTokenPayload payload = getRefreshTokenPayload(refreshToken);
+        if (payload == null) {
             throw new UserException(ExceptionType.INVALID_TOKEN);
         }
-        return UUID.fromString(storedUuid);
+        return payload.uuid();
+    }
+
+    public Role getRoleFromRefreshToken(String refreshToken) {
+        RefreshTokenPayload payload = getRefreshTokenPayload(refreshToken);
+        if (payload == null) {
+            throw new UserException(ExceptionType.INVALID_TOKEN);
+        }
+        return payload.role();
     }
 
     public void deleteRefreshToken(UUID uuid) {
         log.debug("리프레시 토큰 삭제 진행 - UUID: {}", uuid);
 
-        Set<String> keys = redisTemplate.keys(REFRESH_TOKEN_KEY_PREFIX + '*');
-        if (keys == null) {
+        String userKey = getRefreshTokenUserKey(uuid);
+        String refreshToken = redisTemplate.opsForValue().get(userKey);
+        if (refreshToken == null) {
             return;
         }
 
-        for (String key : keys) {
-            String storedUuid = redisTemplate.opsForValue().get(key);
-            if (uuid.toString().equals(storedUuid)) {
-                redisTemplate.delete(key);
-                log.debug("기존 Refresh Token 삭제 완료 - Key: {}", key);
-                break;
-            }
-        }
+        redisTemplate.delete(userKey);
+        redisTemplate.delete(getRefreshTokenTokenKey(refreshToken));
+        log.debug("기존 Refresh Token 삭제 완료 - UUID: {}", uuid);
     }
 
     public String resolveRefreshToken(HttpServletRequest request) {
@@ -198,6 +209,19 @@ public class JwtProvider {
         return UUID.fromString(getClaims(accessToken).getSubject());
     }
 
+    public Role getRoleFromAccessToken(String accessToken) {
+        String role = getClaims(accessToken).get(ROLE_CLAIM, String.class);
+        if (!StringUtils.hasText(role)) {
+            throw new TokenException(ExceptionType.INVALID_TOKEN);
+        }
+
+        try {
+            return Role.valueOf(role);
+        } catch (IllegalArgumentException exception) {
+            throw new TokenException(ExceptionType.INVALID_TOKEN);
+        }
+    }
+
     private Claims getClaims(String jwtToken) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
@@ -216,13 +240,41 @@ public class JwtProvider {
         return null;
     }
 
-    private String getRefreshTokenKey(String refreshToken) {
-        return REFRESH_TOKEN_KEY_PREFIX + refreshToken;
+    private String buildRefreshTokenValue(UUID uuid, Role role) {
+        return uuid + "|" + role.name();
+    }
+
+    private RefreshTokenPayload getRefreshTokenPayload(String refreshToken) {
+        String storedValue = redisTemplate.opsForValue().get(getRefreshTokenTokenKey(refreshToken));
+        if (!StringUtils.hasText(storedValue)) {
+            return null;
+        }
+
+        String[] tokenParts = storedValue.split("\\|", 2);
+        if (tokenParts.length != 2) {
+            return null;
+        }
+
+        try {
+            return new RefreshTokenPayload(UUID.fromString(tokenParts[0]), Role.valueOf(tokenParts[1]));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private String getRefreshTokenTokenKey(String refreshToken) {
+        return REFRESH_TOKEN_TOKEN_KEY_PREFIX + refreshToken;
+    }
+
+    private String getRefreshTokenUserKey(UUID uuid) {
+        return REFRESH_TOKEN_USER_KEY_PREFIX + uuid;
     }
 
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         int maxAge = (int) (REFRESH_TOKEN_EXPIRATION_TIME / 1000);
         response.setHeader("Set-Cookie", String.format(REFRESH_TOKEN_COOKIE_TEMPLATE, refreshToken, maxAge));
     }
-}
 
+    private record RefreshTokenPayload(UUID uuid, Role role) {
+    }
+}
