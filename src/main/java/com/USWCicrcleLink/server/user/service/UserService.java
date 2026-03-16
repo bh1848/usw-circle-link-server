@@ -11,6 +11,8 @@ import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.*;
 import com.USWCicrcleLink.server.global.security.Integration.service.IntegrationAuthService;
 import com.USWCicrcleLink.server.global.security.details.CustomUserDetails;
+import com.USWCicrcleLink.server.global.security.jwt.refresh.domain.RefreshTokenSession;
+import com.USWCicrcleLink.server.global.security.jwt.refresh.service.RefreshTokenService;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
 import com.USWCicrcleLink.server.global.security.jwt.dto.TokenDto;
 import com.USWCicrcleLink.server.profile.domain.Profile;
@@ -57,6 +59,7 @@ public class UserService {
     private final ClubMemberAccountStatusService clubMemberAccountStatusService;
     private final PasswordService passwordService;
     private final IntegrationAuthService integrationAuthService;
+    private final RefreshTokenService refreshTokenService;
 
     private static final int FCM_TOKEN_CERTIFICATION_TIME = 60;
 
@@ -104,8 +107,7 @@ public class UserService {
             throw new UserException(ExceptionType.PROFILE_UPDATE_FAIL);
         }
 
-        jwtProvider.deleteRefreshToken(user.getUserUUID());
-        jwtProvider.deleteRefreshTokenCookie(response);
+        refreshTokenService.invalidateByUserAndClearCookie(user.getUserUUID(), response);
         log.info("비밀번호 변경 완료: {}", user.getUserId());
     }
 
@@ -285,7 +287,7 @@ public class UserService {
 
         user.updateUserPw(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
-        jwtProvider.deleteRefreshToken(user.getUserUUID());
+        refreshTokenService.invalidateByUser(user.getUserUUID());
 
         log.debug("새로운 비밀번호 변경 완료 userUUID = {}", user.getUserUUID());
     }
@@ -355,7 +357,7 @@ public class UserService {
 
 
         String accessToken = jwtProvider.createAccessToken(userUUID, user.getRole(), response);
-        String refreshToken = jwtProvider.createRefreshToken(userUUID, user.getRole(), response);
+        String refreshToken = refreshTokenService.issueRefreshToken(userUUID, user.getRole(), response);
 
         // FCM 토큰 업데이트
         if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {
@@ -414,7 +416,7 @@ public class UserService {
      * 회원 탈퇴 (User)
      */
     public void cancelMembership(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = jwtProvider.resolveRefreshToken(request);
+        String refreshToken = refreshTokenService.resolveRefreshToken(request);
 
         if (refreshToken == null) {
             integrationAuthService.logout(request, response);
@@ -422,17 +424,15 @@ public class UserService {
         }
 
         try {
-            jwtProvider.validateRefreshToken(refreshToken, request);
-            UUID userUUID = jwtProvider.getUUIDFromRefreshToken(refreshToken);
+            RefreshTokenSession session = refreshTokenService.getValidatedSession(refreshToken, request);
+            UUID userUUID = session.uuid();
 
-            // FCM 토큰 삭제 (모바일 푸시 알림 무효화)
             profileRepository.findByUser_UserUUID(userUUID).ifPresent(profile -> {
                 profile.updateFcmToken(null);
                 profileRepository.save(profile);
                 log.debug("회원 탈퇴 - FCM 토큰 삭제 완료 - UUID: {}", userUUID);
             });
 
-            // 회원 정보 삭제
             profileService.deleteProfileByUserUUID(userUUID);
             userRepository.deleteByUserUUID(userUUID);
 

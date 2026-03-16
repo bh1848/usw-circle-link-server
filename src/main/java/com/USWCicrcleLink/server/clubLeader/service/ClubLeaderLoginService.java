@@ -7,6 +7,7 @@ import com.USWCicrcleLink.server.clubLeader.repository.LeaderRepository;
 import com.USWCicrcleLink.server.global.bucket4j.RateLimite;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.UserException;
+import com.USWCicrcleLink.server.global.security.jwt.refresh.service.RefreshTokenService;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +28,7 @@ public class ClubLeaderLoginService {
     private final LeaderRepository leaderRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * 로그인 (Leader)
@@ -45,7 +47,7 @@ public class ClubLeaderLoginService {
 
         UUID leaderUUID = leader.getLeaderUUID();
         String accessToken = jwtProvider.createAccessToken(leaderUUID, leader.getRole(), response);
-        String refreshToken = jwtProvider.createRefreshToken(leaderUUID, leader.getRole(), response);
+        String refreshToken = refreshTokenService.issueRefreshToken(leaderUUID, leader.getRole(), response);
 
         log.debug("Leader 로그인 성공 - uuid: {}, 클럽 UUID: {}", leaderUUID, clubUUID);
         return new LeaderLoginResponse(accessToken, refreshToken, Role.LEADER, clubUUID, leader.isAgreedTerms());

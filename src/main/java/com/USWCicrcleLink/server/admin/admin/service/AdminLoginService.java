@@ -7,6 +7,7 @@ import com.USWCicrcleLink.server.admin.admin.repository.AdminRepository;
 import com.USWCicrcleLink.server.global.bucket4j.RateLimite;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.UserException;
+import com.USWCicrcleLink.server.global.security.jwt.refresh.service.RefreshTokenService;
 import com.USWCicrcleLink.server.global.security.jwt.JwtProvider;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,6 +27,7 @@ public class AdminLoginService {
     private final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * 로그인 (Admin)
@@ -41,7 +43,7 @@ public class AdminLoginService {
 
         UUID adminUUID = admin.getAdminUUID();
         String accessToken = jwtProvider.createAccessToken(adminUUID, admin.getRole(), response);
-        String refreshToken = jwtProvider.createRefreshToken(adminUUID, admin.getRole(), response);
+        String refreshToken = refreshTokenService.issueRefreshToken(adminUUID, admin.getRole(), response);
 
         log.debug("Admin 로그인 성공 - uuid: {}", adminUUID);
         return new AdminLoginResponse(accessToken, refreshToken, Role.ADMIN);
