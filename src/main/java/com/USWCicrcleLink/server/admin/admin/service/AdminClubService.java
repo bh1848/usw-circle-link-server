@@ -186,8 +186,9 @@ public class AdminClubService {
                     return new ClubException(ExceptionType.CLUB_NOT_EXISTS);
                 });
 
+        List<String> s3FileKeys = getDeletableS3FileKeys(clubId);
+
         try {
-            List<String> s3FileKeys = getDeletableS3FileKeys(clubId);
             clubRepository.deleteClubAndDependencies(clubId);
             registerS3DeletionAfterCommit(s3FileKeys);
             log.info("동아리 삭제 성공 - Club uuid: {}", clubUUID);
