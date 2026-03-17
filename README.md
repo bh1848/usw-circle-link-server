@@ -192,7 +192,32 @@ UserDetailsServiceManager
 
 - `@ValidClubRoomNumber` — 유효한 동아리방 번호 집합과 정규식을 결합한 커스텀 검증
 - `@Sanitize` + `SanitizationBinder` — `@RequestBody`·`@RequestPart`·`WebDataBinder` 경로를 모두 커버하며 `@Sanitize`가 붙은 필드에만 선택적으로 Jsoup 정제 적용, `List<String>` 같은 컬렉션 필드도 원소 단위로 정제
-- 적용 기준: 화면에 노출되는 자유 서술형 필드(제목·본문·소개·이름·해시태그 등) 적용, 비밀번호·토큰·UUID·이메일·학번·전화번호 등 정형 필드는 비적용
+
+**@Sanitize 적용 기준**
+
+| 구분 | 대상 |
+|------|------|
+| 적용 | 화면에 노출되는 자유 서술형 필드 (제목·본문·소개·이름·해시태그·카테고리명 등) |
+| 비적용 | 비밀번호·토큰·UUID·이메일·학번·전화번호·계정 ID·URL·enum·숫자 등 정형 필드 |
+
+**적용 필드 목록**
+
+| DTO | 적용 필드 |
+|-----|-----------|
+| AdminNoticeCreationRequest | noticeTitle, noticeContent |
+| AdminNoticeUpdateRequest | noticeTitle, noticeContent |
+| AdminClubCategoryCreationRequest | clubCategoryName |
+| AdminClubCreationRequest | clubName |
+| ClubIntroRequest | clubIntro, clubRecruitment |
+| ClubInfoRequest | leaderName, clubHashtag, clubCategoryName |
+| SignUpRequest | userName, major |
+| ExistingMemberSignUpRequest | userName, major |
+| ProfileRequest | userName, major |
+| DuplicationProfileRequest | userName |
+| ClubMembersAddFromExcelRequest | userName, major |
+| ClubNonMemberUpdateRequest | userName, major |
+| ClubMemberProfileRequest | userName, major |
+| DuplicateProfileMemberRequest | userName |
 
 ### 공통 예외 처리
 
