@@ -83,7 +83,7 @@ class ClubApplicationServiceTest {
     class checkIfCanApply_테스트 {
 
         @Test
-        void 이미_지원한_경우_ALREADY_APPLIED_예외_발생() {
+        void 이미_지원한_경우_ALREADY_APPLIED_예외가_발생한다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -98,7 +98,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 이미_동아리_회원인_경우_ALREADY_MEMBER_예외_발생() {
+        void 이미_동아리_회원인_경우_ALREADY_MEMBER_예외가_발생한다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -114,7 +114,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 전화번호_중복인_경우_PHONE_NUMBER_ALREADY_REGISTERED_예외_발생() {
+        void 전화번호_중복인_경우_PHONE_NUMBER_ALREADY_REGISTERED_예외가_발생한다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -135,7 +135,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 학번_중복인_경우_STUDENT_NUMBER_ALREADY_REGISTERED_예외_발생() {
+        void 학번_중복인_경우_STUDENT_NUMBER_ALREADY_REGISTERED_예외가_발생한다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -158,7 +158,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 모든_조건_통과시_예외_없이_정상_처리() {
+        void 모든_조건을_통과하면_예외_없이_정상_처리된다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -183,7 +183,7 @@ class ClubApplicationServiceTest {
     class getGoogleFormUrlByClubUUID_테스트 {
 
         @Test
-        void 동아리_소개글이_없으면_CLUB_INTRO_NOT_EXISTS_예외_발생() {
+        void 동아리_소개글이_없으면_CLUB_INTRO_NOT_EXISTS_예외가_발생한다() {
             given(clubIntroRepository.findByClubUUID(clubUUID)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> clubApplicationService.getGoogleFormUrlByClubUUID(clubUUID))
@@ -193,7 +193,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 구글_폼_URL이_null이면_GOOGLE_FORM_URL_NOT_EXISTS_예외_발생() {
+        void 구글_폼_URL이_null이면_GOOGLE_FORM_URL_NOT_EXISTS_예외가_발생한다() {
             ClubIntro clubIntro = mock(ClubIntro.class);
             given(clubIntroRepository.findByClubUUID(clubUUID)).willReturn(Optional.of(clubIntro));
             given(clubIntro.getGoogleFormUrl()).willReturn(null);
@@ -205,7 +205,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 구글_폼_URL이_빈_문자열이면_GOOGLE_FORM_URL_NOT_EXISTS_예외_발생() {
+        void 구글_폼_URL이_빈_문자열이면_GOOGLE_FORM_URL_NOT_EXISTS_예외가_발생한다() {
             ClubIntro clubIntro = mock(ClubIntro.class);
             given(clubIntroRepository.findByClubUUID(clubUUID)).willReturn(Optional.of(clubIntro));
             given(clubIntro.getGoogleFormUrl()).willReturn("");
@@ -217,7 +217,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 구글_폼_URL_정상_반환() {
+        void 구글_폼_URL을_정상_반환한다() {
             String expectedUrl = "https://forms.google.com/test";
             ClubIntro clubIntro = mock(ClubIntro.class);
             given(clubIntroRepository.findByClubUUID(clubUUID)).willReturn(Optional.of(clubIntro));
@@ -234,7 +234,7 @@ class ClubApplicationServiceTest {
     class submitClubApplication_테스트 {
 
         @Test
-        void 동아리가_존재하지_않으면_CLUB_NOT_EXISTS_예외_발생() {
+        void 동아리가_존재하지_않으면_CLUB_NOT_EXISTS_예외가_발생한다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -249,7 +249,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void DB_유니크_제약_위반시_ALREADY_APPLIED_예외로_변환() {
+        void DB_유니크_제약을_위반하면_ALREADY_APPLIED_예외로_변환된다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
@@ -266,7 +266,7 @@ class ClubApplicationServiceTest {
         }
 
         @Test
-        void 지원서_정상_제출시_saveAndFlush_호출() {
+        void 지원서를_정상_제출하면_saveAndFlush를_호출한다() {
             try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();

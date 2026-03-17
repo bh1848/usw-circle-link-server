@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.inOrder;
 
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenServiceTest {
@@ -62,16 +64,36 @@ class RefreshTokenServiceTest {
     class issue_테스트 {
 
         @Test
-        void 리프레시_토큰을_저장하고_쿠키를_발급한다() {
+        void 기존_리프레시_토큰이_없어도_삭제를_시도한_뒤_새_토큰을_저장하고_쿠키를_발급한다() {
             refreshTokenService.issue(userUUID, Role.USER, response);
 
-            then(refreshTokenStore).should().deleteByUser(userUUID);
-            then(refreshTokenStore).should().save(refreshTokenSessionCaptor.capture());
-            then(refreshTokenCookieService).should().addRefreshTokenCookie(
+            InOrder inOrder = inOrder(refreshTokenStore, refreshTokenCookieService);
+            inOrder.verify(refreshTokenStore).deleteByUser(userUUID);
+            inOrder.verify(refreshTokenStore).save(refreshTokenSessionCaptor.capture());
+            inOrder.verify(refreshTokenCookieService).addRefreshTokenCookie(
                     response,
                     refreshTokenSessionCaptor.getValue().refreshToken(),
                     REFRESH_TOKEN_EXPIRATION_TIME
             );
+            assertThat(refreshTokenSessionCaptor.getValue().uuid()).isEqualTo(userUUID);
+            assertThat(refreshTokenSessionCaptor.getValue().role()).isEqualTo(Role.USER);
+            assertThat(refreshTokenSessionCaptor.getValue().expirationTime()).isEqualTo(REFRESH_TOKEN_EXPIRATION_TIME);
+            assertThat(refreshTokenSessionCaptor.getValue().refreshToken()).isNotBlank();
+        }
+
+        @Test
+        void 기존_리프레시_토큰이_있어도_먼저_삭제하고_새_토큰을_저장한_뒤_쿠키를_발급한다() {
+            refreshTokenService.issue(userUUID, Role.USER, response);
+
+            InOrder inOrder = inOrder(refreshTokenStore, refreshTokenCookieService);
+            inOrder.verify(refreshTokenStore).deleteByUser(userUUID);
+            inOrder.verify(refreshTokenStore).save(refreshTokenSessionCaptor.capture());
+            inOrder.verify(refreshTokenCookieService).addRefreshTokenCookie(
+                    response,
+                    refreshTokenSessionCaptor.getValue().refreshToken(),
+                    REFRESH_TOKEN_EXPIRATION_TIME
+            );
+            then(refreshTokenStore).should().deleteByUser(userUUID);
             assertThat(refreshTokenSessionCaptor.getValue().uuid()).isEqualTo(userUUID);
             assertThat(refreshTokenSessionCaptor.getValue().role()).isEqualTo(Role.USER);
             assertThat(refreshTokenSessionCaptor.getValue().expirationTime()).isEqualTo(REFRESH_TOKEN_EXPIRATION_TIME);

@@ -30,7 +30,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -79,9 +81,12 @@ class S3FileUploadServiceTest {
                     .willReturn(presignedUrl);
 
             S3FileResponse response = s3FileUploadService.uploadFile(image, "club/");
+            String s3Key = response.getS3FileName();
+            String uuidPart = s3Key.replace("club/", "").replace(".jpg", "");
 
             assertThat(response.getPresignedUrl()).isEqualTo(presignedUrl.toString());
-            assertThat(response.getS3FileName()).startsWith("club/").endsWith(".jpg");
+            assertThat(s3Key).startsWith("club/").endsWith(".jpg");
+            assertThatCode(() -> UUID.fromString(uuidPart)).doesNotThrowAnyException();
             then(fileSignatureValidator).should().isValidFileType(any(InputStream.class), eq("jpg"));
             then(amazonS3).should().generatePresignedUrl(eq(BUCKET), anyString(), any(Date.class), eq(HttpMethod.PUT));
         }
@@ -153,6 +158,7 @@ class S3FileUploadServiceTest {
                     .isInstanceOf(FileException.class)
                     .extracting(exception -> ((FileException) exception).getExceptionType())
                     .isEqualTo(ExceptionType.FILE_VALIDATION_FAILED);
+            then(fileSignatureValidator).shouldHaveNoInteractions();
         }
     }
 
@@ -246,6 +252,13 @@ class S3FileUploadServiceTest {
         @Test
         void 빈_목록이면_삭제를_건너뛴다() {
             s3FileUploadService.deleteFiles(List.of());
+
+            then(amazonS3).shouldHaveNoInteractions();
+        }
+
+        @Test
+        void null_목록이면_삭제를_건너뛴다() {
+            s3FileUploadService.deleteFiles(null);
 
             then(amazonS3).shouldHaveNoInteractions();
         }

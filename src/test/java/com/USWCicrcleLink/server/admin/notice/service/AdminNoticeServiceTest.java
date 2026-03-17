@@ -142,6 +142,21 @@ class AdminNoticeServiceTest {
             assertThat(result.getCurrentPage()).isEqualTo(1);
             then(noticeRepository).should().findAll(pageable);
         }
+
+        @Test
+        void 공지사항이_없으면_빈_페이지를_반환한다() {
+            Pageable pageable = PageRequest.of(0, 10);
+            given(noticeRepository.findAll(pageable))
+                    .willReturn(new PageImpl<>(List.of(), pageable, 0));
+
+            AdminNoticePageListResponse result = adminNoticeService.getNotices(pageable);
+
+            assertThat(result.getContent()).isEmpty();
+            assertThat(result.getTotalPages()).isZero();
+            assertThat(result.getTotalElements()).isZero();
+            assertThat(result.getCurrentPage()).isZero();
+            then(noticeRepository).should().findAll(pageable);
+        }
     }
 
     @Nested
