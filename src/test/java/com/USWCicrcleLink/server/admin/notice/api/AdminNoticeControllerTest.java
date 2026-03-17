@@ -9,6 +9,7 @@ import com.USWCicrcleLink.server.admin.notice.service.AdminNoticeService;
 import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.GlobalExceptionHandler;
 import com.USWCicrcleLink.server.global.exception.errortype.NoticeException;
+import com.USWCicrcleLink.server.global.validation.validator.SanitizationBinder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
@@ -43,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, SanitizationBinder.class})
 @AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(classes = AdminNoticeControllerTest.TestConfig.class)
 @WebMvcTest(AdminNoticeController.class)
@@ -165,8 +167,8 @@ class AdminNoticeControllerTest {
         @Test
         void 사진_없이_공지사항을_생성하면_200을_반환한다() throws Exception {
             AdminNoticeCreationRequest request = new AdminNoticeCreationRequest(
-                    NOTICE_TITLE,
-                    NOTICE_CONTENT,
+                    "<script>alert('xss')</script>" + NOTICE_TITLE,
+                    "<script>alert('xss')</script><b>" + NOTICE_CONTENT + "</b>",
                     List.of()
             );
             MockMultipartFile requestPart = createJsonPart(request);
@@ -181,7 +183,10 @@ class AdminNoticeControllerTest {
                     .andExpect(jsonPath("$.data").isArray())
                     .andExpect(jsonPath("$.data.length()").value(0));
 
-            then(adminNoticeService).should().createNotice(any(AdminNoticeCreationRequest.class), eq(null));
+            then(adminNoticeService).should().createNotice(argThat(createdRequest ->
+                    createdRequest.getNoticeTitle().equals(NOTICE_TITLE)
+                            && createdRequest.getNoticeContent().equals("<b>" + NOTICE_CONTENT + "</b>")
+            ), eq(null));
         }
 
         @Test
@@ -234,8 +239,8 @@ class AdminNoticeControllerTest {
         void 공지사항을_수정하면_200을_반환한다() throws Exception {
             UUID noticeUUID = UUID.randomUUID();
             AdminNoticeUpdateRequest request = new AdminNoticeUpdateRequest(
-                    NOTICE_TITLE,
-                    NOTICE_CONTENT,
+                    "<script>alert('xss')</script>" + NOTICE_TITLE,
+                    "<script>alert('xss')</script><b>" + NOTICE_CONTENT + "</b>",
                     List.of(1)
             );
             MockMultipartFile requestPart = createJsonPart(request);
@@ -255,7 +260,10 @@ class AdminNoticeControllerTest {
                     .andExpect(jsonPath("$.message").value(SUCCESS_UPDATE_MESSAGE))
                     .andExpect(jsonPath("$.data[0]").value("https://cdn.test/updated-url"));
 
-            then(adminNoticeService).should().updateNotice(eq(noticeUUID), any(AdminNoticeUpdateRequest.class), any());
+            then(adminNoticeService).should().updateNotice(eq(noticeUUID), argThat(updatedRequest ->
+                    updatedRequest.getNoticeTitle().equals(NOTICE_TITLE)
+                            && updatedRequest.getNoticeContent().equals("<b>" + NOTICE_CONTENT + "</b>")
+            ), any());
         }
 
         @Test

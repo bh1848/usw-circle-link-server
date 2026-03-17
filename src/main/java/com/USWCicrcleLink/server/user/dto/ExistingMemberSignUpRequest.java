@@ -1,5 +1,6 @@
 package com.USWCicrcleLink.server.user.dto;
 
+import com.USWCicrcleLink.server.global.validation.annotation.Sanitize;
 import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import com.USWCicrcleLink.server.user.domain.ExistingMember.ClubMemberTemp;
 import jakarta.validation.constraints.NotBlank;
@@ -37,6 +38,7 @@ public class ExistingMemberSignUpRequest {
     @NotBlank(message = "비밀번호는 필수 입력 값입니다.",groups = ValidationGroups.NotBlankGroup.class)
     private String confirmPassword;
 
+    @Sanitize
     @NotBlank(message = "이름은 필수 입력 값입니다.",groups = ValidationGroups.NotBlankGroup.class)
     @Size(min = 2, max = 30, message = "이름은 2~30자 이내여야 합니다.", groups = ValidationGroups.SizeGroup.class)
     @Pattern(regexp = "^[a-zA-Z가-힣]+$", message = "이름은 영어 또는 한글만 입력 가능합니다.", groups = ValidationGroups.PatternGroup.class)
@@ -52,6 +54,7 @@ public class ExistingMemberSignUpRequest {
     @Pattern(regexp = "^[0-9]{8}$", message = "학번은 숫자만 입력 가능합니다.", groups = ValidationGroups.PatternGroup.class)
     private String studentNumber;
 
+    @Sanitize
     @NotBlank(message = "학과는 필수 입력 값입니다.", groups = ValidationGroups.NotBlankGroup.class)
     @Size(min = 1, max = 20, message = "학과는 1~20자 이내여야 합니다.", groups = ValidationGroups.SizeGroup.class)
     @Pattern(regexp = "^[가-힣a-zA-Z]+$", message = "학과는 한글 또는 영어만 입력 가능합니다.", groups = ValidationGroups.PatternGroup.class)

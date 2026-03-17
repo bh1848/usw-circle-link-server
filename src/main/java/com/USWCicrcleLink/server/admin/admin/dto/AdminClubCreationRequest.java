@@ -1,6 +1,7 @@
 package com.USWCicrcleLink.server.admin.admin.dto;
 
 import com.USWCicrcleLink.server.club.domain.Department;
+import com.USWCicrcleLink.server.global.validation.annotation.Sanitize;
 import com.USWCicrcleLink.server.global.validation.annotation.ValidClubRoomNumber;
 import com.USWCicrcleLink.server.global.validation.support.ValidationGroups;
 import jakarta.persistence.EnumType;
@@ -36,6 +37,7 @@ public class AdminClubCreationRequest {
     private String leaderPwConfirm;
 
     @NotBlank(message = "동아리명은 필수 입력 값입니다.", groups = ValidationGroups.NotBlankGroup.class)
+    @Sanitize
     @Size(min = 1, max = 10, message = "동아리명은 최대 10자까지 입력 가능합니다.", groups = ValidationGroups.SizeGroup.class)
     @Pattern(regexp = "^[가-힣a-zA-Z0-9]+$", message = "동아리명에는 한글, 영문 대소문자, 숫자만 포함할 수 있으며 공백 또는 특수문자를 포함할 수 없습니다.", groups = ValidationGroups.PatternGroup.class)
     private String clubName;
