@@ -1,29 +1,21 @@
 package com.USWCicrcleLink.server.club.repository;
 
 import com.USWCicrcleLink.server.admin.admin.dto.AdminClubListResponse;
-import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Transactional
 public class ClubRepositoryCustomImpl implements ClubRepositoryCustom {
 
     @PersistenceContext
     private EntityManager em;
-
-    private final S3FileUploadService s3FileUploadService;
 
     @Override
     public Page<AdminClubListResponse> findAllWithMemberAndLeaderCount(Pageable pageable) {
@@ -49,20 +41,6 @@ public class ClubRepositoryCustomImpl implements ClubRepositoryCustom {
 
     @Override
     public void deleteClubAndDependencies(Long clubId) {
-        List<String> clubIntroPhotoKeys = em.createQuery(
-                        "SELECT cip.clubIntroPhotoS3Key FROM ClubIntroPhoto cip WHERE cip.clubIntro.club.clubId = :clubId", String.class)
-                .setParameter("clubId", clubId)
-                .getResultList();
-
-        List<String> clubMainPhotoKeys = em.createQuery(
-                        "SELECT cmp.clubMainPhotoS3Key FROM ClubMainPhoto cmp WHERE cmp.club.clubId = :clubId", String.class)
-                .setParameter("clubId", clubId)
-                .getResultList();
-
-        List<String> s3Keys = new ArrayList<>();
-        s3Keys.addAll(clubIntroPhotoKeys);
-        s3Keys.addAll(clubMainPhotoKeys);
-
         em.createQuery("DELETE FROM ClubMemberAccountStatus cmas WHERE cmas.club.clubId = :clubId")
                 .setParameter("clubId", clubId)
                 .executeUpdate();
@@ -98,15 +76,6 @@ public class ClubRepositoryCustomImpl implements ClubRepositoryCustom {
         em.createQuery("DELETE FROM Leader l WHERE l.club.clubId = :clubId")
                 .setParameter("clubId", clubId)
                 .executeUpdate();
-
-        if (!s3Keys.isEmpty()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    s3FileUploadService.deleteFiles(s3Keys);
-                }
-            });
-        }
 
         em.createQuery("DELETE FROM Club c WHERE c.clubId = :clubId")
                 .setParameter("clubId", clubId)

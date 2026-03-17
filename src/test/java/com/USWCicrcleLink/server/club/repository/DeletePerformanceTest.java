@@ -399,76 +399,50 @@ class DeletePerformanceTest {
             assertThat(applicationCountBefore).isEqualTo(APPLICANT_COUNT);
 
             // when
-            ArgumentCaptor<TransactionSynchronization> synchronizationCaptor =
-                    ArgumentCaptor.forClass(TransactionSynchronization.class);
-
             long startTime = System.currentTimeMillis();
-            try (MockedStatic<TransactionSynchronizationManager> mocked =
-                         mockStatic(TransactionSynchronizationManager.class, Answers.CALLS_REAL_METHODS)) {
-                clubRepository.deleteClubAndDependencies(clubId);
-                entityManager.flush();
-                entityManager.clear();
-                long elapsed = System.currentTimeMillis() - startTime;
+            clubRepository.deleteClubAndDependencies(clubId);
+            entityManager.flush();
+            entityManager.clear();
+            long elapsed = System.currentTimeMillis() - startTime;
 
-                // then — afterCommit 콜백이 등록됐는지 확인
-                mocked.verify(() -> TransactionSynchronizationManager
-                        .registerSynchronization(synchronizationCaptor.capture()));
+            // then — 연관 엔티티 전부 삭제됐는지 검증
+            assertThat(clubRepository.findById(clubId)).isEmpty();
+            assertThat(leaderRepository.findByClubUUID(club.getClubUUID())).isEmpty();
+            assertThat(clubMainPhotoRepository.findByClub(club)).isEmpty();
+            assertThat(clubIntroRepository.findByClubClubId(clubId)).isEmpty();
+            assertThat(clubIntroPhotoRepository.findByClubIntroClubId(clubId)).isEmpty();
+            assertThat(clubHashtagRepository.findByClubClubId(clubId)).isEmpty();
+            assertThat(clubCategoryMappingRepository.findByClubClubId(clubId)).isEmpty();
+            assertThat(clubMembersRepository.findByClub(club)).isEmpty();
+            assertThat(clubApplicationRepository.findByClub_ClubIdAndChecked(clubId, false)).isEmpty();
+            then(s3FileUploadService).shouldHaveNoInteractions();
 
-                // 커밋 전에는 S3 삭제가 실행되지 않아야 한다
-                then(s3FileUploadService).shouldHaveNoInteractions();
-
-                // afterCommit 직접 트리거
-                synchronizationCaptor.getValue().afterCommit();
-
-                // afterCommit 이후 S3 일괄 삭제가 실행된다
-                then(s3FileUploadService).should().deleteFiles(org.mockito.ArgumentMatchers.anyList());
-
-                // 연관 엔티티 전부 삭제됐는지 검증
-                assertThat(clubRepository.findById(clubId)).isEmpty();
-                assertThat(leaderRepository.findByClubUUID(club.getClubUUID())).isEmpty();
-                assertThat(clubMainPhotoRepository.findByClub(club)).isEmpty();
-                assertThat(clubIntroRepository.findByClubClubId(clubId)).isEmpty();
-                assertThat(clubIntroPhotoRepository.findByClubIntroClubId(clubId)).isEmpty();
-                assertThat(clubHashtagRepository.findByClubClubId(clubId)).isEmpty();
-                assertThat(clubCategoryMappingRepository.findByClubClubId(clubId)).isEmpty();
-                assertThat(clubMembersRepository.findByClub(club)).isEmpty();
-                assertThat(clubApplicationRepository.findByClub_ClubIdAndChecked(clubId, false)).isEmpty();
-
-                System.out.printf(
-                        "[변경 후] 삭제 소요 시간: %d ms | 회원 %d명 + 지원자 %d명 + 소개사진 %d장%n",
-                        elapsed, MEMBER_COUNT, APPLICANT_COUNT, INTRO_PHOTO_COUNT
-                );
-            }
+            System.out.printf(
+                    "[변경 후] 삭제 소요 시간: %d ms | 회원 %d명 + 지원자 %d명 + 소개사진 %d장%n",
+                    elapsed, MEMBER_COUNT, APPLICANT_COUNT, INTRO_PHOTO_COUNT
+            );
         }
 
         @Test
-        @DisplayName("S3 삭제가 afterCommit 이후에만 실행되는 것을 확인한다 (DB 불일치 방지)")
-        void 변경_후_방식은_S3_삭제가_커밋_이후에만_실행된다() {
+        @DisplayName("레포지토리는 S3 삭제와 afterCommit 등록을 수행하지 않는다")
+        void 변경_후_방식은_레포지토리에서_S3_정리를_수행하지_않는다() {
             // given
             Club club = createFullClub("후S3테스트", "B202");
             Long clubId = club.getClubId();
 
-            ArgumentCaptor<TransactionSynchronization> synchronizationCaptor =
-                    ArgumentCaptor.forClass(TransactionSynchronization.class);
-
             try (MockedStatic<TransactionSynchronizationManager> mocked =
                          mockStatic(TransactionSynchronizationManager.class, Answers.CALLS_REAL_METHODS)) {
-
-                // when — 벌크 DELETE 실행
                 clubRepository.deleteClubAndDependencies(clubId);
                 entityManager.flush();
 
-                // then — DB 삭제는 완료됐지만 S3는 아직 삭제되지 않아야 한다
+                // then — 레포지토리는 S3/afterCommit 책임이 없다
                 then(s3FileUploadService).shouldHaveNoInteractions();
-
-                // afterCommit 콜백이 등록됐는지 확인
-                mocked.verify(() -> TransactionSynchronizationManager
-                        .registerSynchronization(synchronizationCaptor.capture()));
-
-                // afterCommit 트리거 → 이때만 S3 삭제 실행
-                synchronizationCaptor.getValue().afterCommit();
-
-                then(s3FileUploadService).should().deleteFiles(org.mockito.ArgumentMatchers.anyList());
+                mocked.verify(
+                        () -> TransactionSynchronizationManager.registerSynchronization(
+                                org.mockito.ArgumentMatchers.any(TransactionSynchronization.class)
+                        ),
+                        org.mockito.Mockito.never()
+                );
             }
         }
     }

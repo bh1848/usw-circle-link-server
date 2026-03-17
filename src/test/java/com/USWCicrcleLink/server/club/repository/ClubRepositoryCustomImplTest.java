@@ -18,7 +18,6 @@ import com.USWCicrcleLink.server.clubIntro.repository.ClubIntroPhotoRepository;
 import com.USWCicrcleLink.server.clubIntro.repository.ClubIntroRepository;
 import com.USWCicrcleLink.server.clubLeader.domain.Leader;
 import com.USWCicrcleLink.server.clubLeader.repository.LeaderRepository;
-import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import com.USWCicrcleLink.server.profile.domain.MemberType;
 import com.USWCicrcleLink.server.profile.domain.Profile;
@@ -33,24 +32,16 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Answers;
-import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mockStatic;
 
 @DataJpaTest
 class ClubRepositoryCustomImplTest {
@@ -81,9 +72,6 @@ class ClubRepositoryCustomImplTest {
     @Autowired private UserRepository userRepository;
     @Autowired private ProfileRepository profileRepository;
     @Autowired private EntityManager entityManager;
-
-    @MockBean
-    private S3FileUploadService s3FileUploadService;
 
     private Club targetClub;
     private Club secondClub;
@@ -204,7 +192,7 @@ class ClubRepositoryCustomImplTest {
     class deleteClubAndDependencies_테스트 {
 
         @Test
-        void 연관_엔티티를_모두_삭제하고_afterCommit_후_S3_삭제를_실행한다() {
+        void 연관_엔티티를_모두_삭제한다() {
             ClubIntro savedClubIntro = clubIntroRepository.save(ClubIntro.builder()
                     .club(targetClub)
                     .clubIntro(INTRO_TEXT)
@@ -271,35 +259,23 @@ class ClubRepositoryCustomImplTest {
                     .clubMemberTemp(clubMemberTemp)
                     .build());
 
-            ArgumentCaptor<TransactionSynchronization> synchronizationCaptor = ArgumentCaptor.forClass(TransactionSynchronization.class);
+            clubRepository.deleteClubAndDependencies(targetClub.getClubId());
+            clearPersistenceContext();
 
-            try (MockedStatic<TransactionSynchronizationManager> mocked =
-                         mockStatic(TransactionSynchronizationManager.class, Answers.CALLS_REAL_METHODS)) {
-                clubRepository.deleteClubAndDependencies(targetClub.getClubId());
-                clearPersistenceContext();
-
-                mocked.verify(() -> TransactionSynchronizationManager.registerSynchronization(synchronizationCaptor.capture()));
-                then(s3FileUploadService).shouldHaveNoInteractions();
-
-                assertThat(clubRepository.findById(targetClub.getClubId())).isEmpty();
-                assertThat(leaderRepository.findByClubUUID(targetClub.getClubUUID())).isEmpty();
-                assertThat(clubMainPhotoRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
-                assertThat(clubIntroRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
-                assertThat(clubIntroPhotoRepository.findByClubIntroClubId(targetClub.getClubId())).isEmpty();
-                assertThat(clubHashtagRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
-                assertThat(clubCategoryMappingRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
-                assertThat(clubMembersRepository.findByClub(targetClub)).isEmpty();
-                assertThat(clubApplicationRepository.findByClub_ClubIdAndChecked(targetClub.getClubId(), false)).isEmpty();
-                assertThat(clubMemberAccountStatusRepository.findAll()).isEmpty();
-
-                synchronizationCaptor.getValue().afterCommit();
-
-                then(s3FileUploadService).should().deleteFiles(List.of(INTRO_S3_KEY, MAIN_S3_KEY));
-            }
+            assertThat(clubRepository.findById(targetClub.getClubId())).isEmpty();
+            assertThat(leaderRepository.findByClubUUID(targetClub.getClubUUID())).isEmpty();
+            assertThat(clubMainPhotoRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
+            assertThat(clubIntroRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
+            assertThat(clubIntroPhotoRepository.findByClubIntroClubId(targetClub.getClubId())).isEmpty();
+            assertThat(clubHashtagRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
+            assertThat(clubCategoryMappingRepository.findByClubClubId(targetClub.getClubId())).isEmpty();
+            assertThat(clubMembersRepository.findByClub(targetClub)).isEmpty();
+            assertThat(clubApplicationRepository.findByClub_ClubIdAndChecked(targetClub.getClubId(), false)).isEmpty();
+            assertThat(clubMemberAccountStatusRepository.findAll()).isEmpty();
         }
 
         @Test
-        void S3_키가_없으면_registerSynchronization_없이_연관_엔티티만_삭제한다() {
+        void 사진_키가_없어도_연관_엔티티를_정상_삭제한다() {
             leaderRepository.save(Leader.builder()
                     .leaderAccount("leader-no-photo")
                     .leaderPw(USER_PASSWORD)
@@ -312,18 +288,12 @@ class ClubRepositoryCustomImplTest {
                     .profile(firstProfile)
                     .build());
 
-            try (MockedStatic<TransactionSynchronizationManager> mocked =
-                         mockStatic(TransactionSynchronizationManager.class, Answers.CALLS_REAL_METHODS)) {
-                clubRepository.deleteClubAndDependencies(targetClub.getClubId());
-                clearPersistenceContext();
+            clubRepository.deleteClubAndDependencies(targetClub.getClubId());
+            clearPersistenceContext();
 
-                mocked.verify(() -> TransactionSynchronizationManager.registerSynchronization(org.mockito.ArgumentMatchers.any()),
-                        org.mockito.Mockito.never());
-                then(s3FileUploadService).shouldHaveNoInteractions();
-                assertThat(clubRepository.findById(targetClub.getClubId())).isEmpty();
-                assertThat(leaderRepository.findByClubUUID(targetClub.getClubUUID())).isEmpty();
-                assertThat(clubMembersRepository.findByClub(targetClub)).isEmpty();
-            }
+            assertThat(clubRepository.findById(targetClub.getClubId())).isEmpty();
+            assertThat(leaderRepository.findByClubUUID(targetClub.getClubUUID())).isEmpty();
+            assertThat(clubMembersRepository.findByClub(targetClub)).isEmpty();
         }
     }
 }
