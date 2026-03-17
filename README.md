@@ -242,6 +242,7 @@ UserDetailsServiceManager
 ### 테스트 전략
 
 #### 단위 테스트(Service)
+
 외부 의존성을 Mockito로 모킹해 비즈니스 로직에만 집중합니다. `MockedStatic`으로 `SecurityContextHolder`를 격리해 인증 컨텍스트를 제어합니다.
 
 ```java
@@ -256,24 +257,22 @@ assertThatThrownBy(() -> service.submitClubApplication(clubUUID))
 ```
 
 #### 통합 테스트(Repository)
-`@DataJpaTest`로 실제 JPA 쿼리를 검증합니다. `deleteClubAndDependencies()` 테스트에서는 `MockedStatic<TransactionSynchronizationManager>`를 활용해 `afterCommit()` 콜백 등록 여부와 S3 삭제 호출 순서를 분리 검증합니다.
+
+`@DataJpaTest`로 실제 JPA 쿼리를 검증합니다. `afterCommit()` 콜백 등록 여부와 S3 삭제 호출은 `AdminClubServiceTest`에서 `MockedStatic<TransactionSynchronizationManager>`를 활용해 분리 검증합니다.
 
 ```java
 // 예: 커밋 후 S3 삭제 보장 검증
-mocked.verify(() -> TransactionSynchronizationManager
-    .registerSynchronization(synchronizationCaptor.capture()));
+transactionMocked.verify(() -> TransactionSynchronizationManager
+    .registerSynchronization(transactionSynchronizationCaptor.capture()));
 
-// 커밋 전에는 S3 삭제가 실행되지 않아야 한다
-then(s3FileUploadService).shouldHaveNoInteractions();
-
-// afterCommit 직접 트리거 → 이때만 S3 삭제 실행
-synchronizationCaptor.getValue().afterCommit();
-then(s3FileUploadService).should().deleteFiles(anyList());
+transactionSynchronizationCaptor.getValue().afterCommit();
+verify(s3FileUploadService).deleteFiles(List.of("main.jpg", "intro-1.jpg", "intro-2.jpg"));
 ```
 
-`shouldHaveNoInteractions()`로 커밋 전 S3 삭제가 없음을 먼저 확인하고 `afterCommit()`을 직접 트리거한 뒤 `deleteFiles()`가 호출되는 순서를 검증합니다.
+`afterCommit()`을 직접 트리거한 뒤 빈 문자열 key는 제외하고 유효한 S3 key만 `deleteFiles()`에 전달되는 것을 검증합니다.
 
 #### 슬라이스 테스트(Controller)
+
 `@WebMvcTest` + `addFilters = false`로 Security 필터를 제거하고 HTTP 레이어만 검증합니다. MockMvc로 상태코드, 응답 JSON 구조, 예외 코드를 단언합니다.
 
 ```java
@@ -284,6 +283,7 @@ mockMvc.perform(get("/apply/can-apply/{clubUUID}", clubUUID))
 ```
 
 #### Security 테스트
+
 유효·만료·변조 토큰 세 케이스를 각각 검증하고 JwtFilter에서 각 케이스에 따라 `CustomAuthenticationEntryPoint`가 올바른 에러 코드로 호출되는지 `ArgumentCaptor`로 확인합니다.
 
 ---
