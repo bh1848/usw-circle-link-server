@@ -9,16 +9,15 @@ server:
 logging:
   level:
     root: warn
-    com.USWCicrcleLink.server: info  # 프로젝트 관련 로그
-    org.springframework.security: error  # Spring Security 로그
-    org.springframework.web: error  # 서블릿 로그
-    org.apache.catalina.core: error  # Tomcat 로그
-    org.springframework: error  # Spring 내부 로그
-    org.hibernate.SQL: off  # Hibernate SQL 쿼리 로그
-    org.hibernate.type: off  # Hibernate 바인딩 로그
+    com.USWCicrcleLink.server: info
+    org.springframework.security: error
+    org.springframework.web: error
+    org.apache.catalina.core: error
+    org.springframework: error
+    org.hibernate.SQL: off
+    org.hibernate.type: off
     p6spy: off
 
-#email url
 email:
   config:
     baseUrl: ${PROD_SERVER_URL}
@@ -49,11 +48,9 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
-# CORS 설정 추가
 cors:
   allowed-origins: ${PROD_SERVER_ALLOWED_ORIGINS}
 
-# 쿠키 설정 추가
 security:
   cookie:
     secure: true

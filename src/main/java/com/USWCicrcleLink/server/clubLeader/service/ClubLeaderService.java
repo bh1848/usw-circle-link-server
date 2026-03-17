@@ -81,6 +81,7 @@ public class ClubLeaderService {
     private final ClubMemberAccountStatusRepository clubMemberAccountStatusRepository;
     private final ClubMemberTempRepository clubMemberTempRepository;
     private final UserRepository userRepository;
+    private final FileSignatureValidator fileSignatureValidator;
 
     // 최대 사진 순서(업로드, 삭제)
     int PHOTO_LIMIT = 5;
@@ -892,7 +893,7 @@ public class ClubLeaderService {
 
         // 파일 시그니처를 통해 실제 파일 형식이 올바른지 확인
         try {
-            if (!FileSignatureValidator.isValidFileType(clubMembersFile.getInputStream(), fileExtension)) {
+            if (!fileSignatureValidator.isValidFileType(clubMembersFile.getInputStream(), fileExtension)) {
                 throw new FileException(ExceptionType.UNSUPPORTED_FILE_EXTENSION);
             }
         } catch (IOException e) {

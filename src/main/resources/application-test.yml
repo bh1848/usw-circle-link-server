@@ -18,7 +18,6 @@ logging:
     org.hibernate.type: info
     p6spy: info
 
-# email url
 email:
   config:
     baseUrl: ${TEST_SERVER_URL}
@@ -49,11 +48,9 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
-# CORS 설정 추가
 cors:
   allowed-origins: ${TEST_SERVER_ALLOWED_ORIGINS}
 
- # 쿠키 설정 추가
 security:
   cookie:
     secure: false

@@ -27,6 +27,8 @@ class FileSignatureValidatorTest {
             0x11, 0x22, 0x33, 0x44
     };
 
+    private final FileSignatureValidator fileSignatureValidator = new FileSignatureValidator();
+
     @Nested
     class isValidFileType_테스트 {
 
@@ -34,7 +36,7 @@ class FileSignatureValidatorTest {
         void jpg_매직_바이트가_정상이면_true를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(JPG_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "jpg");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "jpg");
 
             assertThat(result).isTrue();
         }
@@ -43,7 +45,7 @@ class FileSignatureValidatorTest {
         void jpeg_매직_바이트가_정상이면_true를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(JPG_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "jpeg");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "jpeg");
 
             assertThat(result).isTrue();
         }
@@ -52,7 +54,7 @@ class FileSignatureValidatorTest {
         void png_매직_바이트가_정상이면_true를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(PNG_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "png");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "png");
 
             assertThat(result).isTrue();
         }
@@ -61,7 +63,7 @@ class FileSignatureValidatorTest {
         void png에_4바이트만_주면_false를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(PNG_SHORT_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "png");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "png");
 
             assertThat(result).isFalse();
         }
@@ -70,7 +72,7 @@ class FileSignatureValidatorTest {
         void xlsx_매직_바이트가_정상이면_true를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(XLSX_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "xlsx");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "xlsx");
 
             assertThat(result).isTrue();
         }
@@ -79,7 +81,7 @@ class FileSignatureValidatorTest {
         void 지원하지_않는_확장자면_false를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(JPG_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "pdf");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "pdf");
 
             assertThat(result).isFalse();
         }
@@ -88,7 +90,7 @@ class FileSignatureValidatorTest {
         void 변조된_파일이면_false를_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(INVALID_SIGNATURE);
 
-            boolean result = FileSignatureValidator.isValidFileType(inputStream, "jpg");
+            boolean result = fileSignatureValidator.isValidFileType(inputStream, "jpg");
 
             assertThat(result).isFalse();
         }
@@ -101,7 +103,7 @@ class FileSignatureValidatorTest {
         void 바이트_수보다_짧은_스트림이면_빈_문자열을_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(PNG_SHORT_SIGNATURE);
 
-            String signature = FileSignatureValidator.getFileSignature(inputStream, 8);
+            String signature = fileSignatureValidator.getFileSignature(inputStream, 8);
 
             assertThat(signature).isEmpty();
         }
@@ -110,7 +112,7 @@ class FileSignatureValidatorTest {
         void 정상_바이트를_읽으면_16진수_문자열을_반환한다() throws IOException {
             InputStream inputStream = new ByteArrayInputStream(XLSX_SIGNATURE);
 
-            String signature = FileSignatureValidator.getFileSignature(inputStream, 4);
+            String signature = fileSignatureValidator.getFileSignature(inputStream, 4);
 
             assertThat(signature).isEqualTo("504B0304");
         }

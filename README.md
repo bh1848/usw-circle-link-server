@@ -234,16 +234,16 @@ UserDetailsServiceManager
 
 ### 테스트 구성
 
-총 **22개 테스트 클래스**, **166개 테스트 케이스**를 작성했습니다.  
+총 **23개 테스트 클래스**, **176개 테스트 케이스**를 작성했습니다.
 
 | 유형 | 클래스 수 | 주요 내용 |
 |------|-----------|-----------|
 | Service (단위) | 6 | Mockito 기반 비즈니스 로직·예외 분기 검증 |
-| Repository (통합) | 4 | `@DataJpaTest` JPQL 커스텀 쿼리·벌크 DELETE 실행 검증 |
+| Repository (통합) | 5 | `@DataJpaTest` JPQL 커스텀 쿼리·벌크 DELETE 실행 검증 |
 | Controller (슬라이스) | 3 | `@WebMvcTest` HTTP 상태코드·응답 본문 검증 |
 | Security | 5 | JWT 발급·검증·만료, JwtFilter 동작, RefreshToken 생명주기 |
-| Validator | 2 | 파일 시그니처 검증, 동아리방 번호 유효성 |
-| 기타 | 2 | `UserDetailsServiceManager` EnumMap 조회, `IntegrationAuthService` |
+| Validator | 3 | 파일 시그니처 검증, 동아리방 번호 유효성, 입력 정제 |
+| 기타 | 1 | `IntegrationAuthService` 로그아웃·토큰 갱신 흐름 |
 
 ### 테스트 전략
 

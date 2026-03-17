@@ -34,6 +34,7 @@ public class S3FileUploadService {
     private static final String EMPTY_URL = "";
 
     private final AmazonS3 amazonS3;
+    private final FileSignatureValidator fileSignatureValidator;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -70,7 +71,7 @@ public class S3FileUploadService {
         }
 
         try {
-            if (!FileSignatureValidator.isValidFileType(image.getInputStream(), fileExtension)) {
+            if (!fileSignatureValidator.isValidFileType(image.getInputStream(), fileExtension)) {
                 throw new FileException(ExceptionType.UNSUPPORTED_FILE_EXTENSION);
             }
         } catch (IOException exception) {

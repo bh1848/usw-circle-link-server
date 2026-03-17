@@ -1,13 +1,16 @@
 package com.USWCicrcleLink.server.global.validation.validator;
 
+import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public final class FileSignatureValidator {
+@Component
+public class FileSignatureValidator {
     private static final int DEFAULT_SIGNATURE_BYTES = 4;
     private static final int PNG_SIGNATURE_BYTES = 8;
-    private static final Map<String, String> FILE_SIGNATURES = Map.of(
+    private final Map<String, String> fileSignatures = Map.of(
             "jpg", "FFD8FF",
             "jpeg", "FFD8FF",
             "png", "89504E47",
@@ -15,10 +18,7 @@ public final class FileSignatureValidator {
             "xlsx", "504B0304"
     );
 
-    private FileSignatureValidator() {
-    }
-
-    public static String getFileSignature(InputStream inputStream, int bytesToRead) throws IOException {
+    public String getFileSignature(InputStream inputStream, int bytesToRead) throws IOException {
         byte[] fileHeader = inputStream.readNBytes(bytesToRead);
         if (fileHeader.length < bytesToRead) {
             return "";
@@ -26,8 +26,8 @@ public final class FileSignatureValidator {
         return bytesToHex(fileHeader);
     }
 
-    public static boolean isValidFileType(InputStream inputStream, String expectedExtension) throws IOException {
-        String expectedSignature = FILE_SIGNATURES.get(expectedExtension.toLowerCase());
+    public boolean isValidFileType(InputStream inputStream, String expectedExtension) throws IOException {
+        String expectedSignature = fileSignatures.get(expectedExtension.toLowerCase());
         if (expectedSignature == null) {
             return false;
         }
@@ -37,7 +37,7 @@ public final class FileSignatureValidator {
         return fileSignature.startsWith(expectedSignature);
     }
 
-    private static String bytesToHex(byte[] bytes) {
+    private String bytesToHex(byte[] bytes) {
         StringBuilder stringBuilder = new StringBuilder();
         for (byte currentByte : bytes) {
             stringBuilder.append(String.format("%02X", currentByte));

@@ -40,10 +40,10 @@ spring:
       on-profile: local
 
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:tcp://localhost/~/CircleLink
-    username: sa
-    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${LOCAL_MYSQL_HOST}:${LOCAL_MYSQL_PORT}/${LOCAL_MYSQL_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${LOCAL_MYSQL_USER}
+    password: ${LOCAL_MYSQL_PASS}
 
   jpa:
     hibernate:
@@ -57,12 +57,9 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
-
-# CORS 설정 추가
 cors:
   allowed-origins: ${LOCAL_SERVER_ALLOWED_ORIGINS}
 
-  # 쿠키 설정 추가
 security:
   cookie:
     secure: false
