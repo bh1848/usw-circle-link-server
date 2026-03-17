@@ -20,6 +20,7 @@ import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.AdminException;
 import com.USWCicrcleLink.server.global.exception.errortype.BaseException;
 import com.USWCicrcleLink.server.global.exception.errortype.ClubException;
+import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;
 import com.USWCicrcleLink.server.global.security.details.CustomAdminDetails;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +54,7 @@ public class AdminClubService {
     private final ClubMainPhotoRepository clubMainPhotoRepository;
     private final ClubIntroPhotoRepository clubIntroPhotoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final S3FileUploadService s3FileUploadService;
 
     @Transactional(readOnly = true)
     public AdminClubPageListResponse getAllClubs(Pageable pageable) {
@@ -183,12 +187,46 @@ public class AdminClubService {
                 });
 
         try {
+            List<String> s3FileKeys = getDeletableS3FileKeys(clubId);
             clubRepository.deleteClubAndDependencies(clubId);
+            registerS3DeletionAfterCommit(s3FileKeys);
             log.info("동아리 삭제 성공 - Club uuid: {}", clubUUID);
         } catch (Exception e) {
             log.error("동아리 삭제 중 오류 발생 - Club uuid: {}, 오류: {}", clubUUID, e.getMessage());
             throw new BaseException(ExceptionType.SERVER_ERROR, e);
         }
+    }
+
+    private List<String> getDeletableS3FileKeys(Long clubId) {
+        List<String> s3FileKeys = new ArrayList<>();
+
+        clubMainPhotoRepository.findS3KeyByClubId(clubId)
+                .filter(this::hasText)
+                .ifPresent(s3FileKeys::add);
+
+        clubIntroPhotoRepository.findByClubIntroClubId(clubId).stream()
+                .map(ClubIntroPhoto::getClubIntroPhotoS3Key)
+                .filter(this::hasText)
+                .forEach(s3FileKeys::add);
+
+        return s3FileKeys;
+    }
+
+    private void registerS3DeletionAfterCommit(List<String> s3FileKeys) {
+        if (s3FileKeys.isEmpty()) {
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                s3FileUploadService.deleteFiles(s3FileKeys);
+            }
+        });
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private Admin getAuthenticatedAdmin() {

@@ -21,6 +21,7 @@ import com.USWCicrcleLink.server.global.exception.ExceptionType;
 import com.USWCicrcleLink.server.global.exception.errortype.AdminException;
 import com.USWCicrcleLink.server.global.exception.errortype.BaseException;
 import com.USWCicrcleLink.server.global.exception.errortype.ClubException;
+import com.USWCicrcleLink.server.global.s3File.Service.S3FileUploadService;
 import com.USWCicrcleLink.server.global.security.details.CustomAdminDetails;
 import com.USWCicrcleLink.server.global.security.jwt.domain.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +73,7 @@ class AdminClubServiceTest {
     @Mock private ClubMainPhotoRepository clubMainPhotoRepository;
     @Mock private ClubIntroPhotoRepository clubIntroPhotoRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private S3FileUploadService s3FileUploadService;
 
     @InjectMocks
     private AdminClubService adminClubService;
@@ -79,6 +83,8 @@ class AdminClubServiceTest {
 
     @Captor
     private ArgumentCaptor<List<ClubIntroPhoto>> clubIntroPhotosCaptor;
+    @Captor
+    private ArgumentCaptor<TransactionSynchronization> transactionSynchronizationCaptor;
 
     private Admin admin;
     private UUID clubUUID;
@@ -361,18 +367,54 @@ class AdminClubServiceTest {
         }
 
         @Test
-        void 삭제_대상_동아리가_있으면_의존성과_함께_삭제한다() {
-            try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class)) {
+        void 삭제_대상_동아리가_있으면_커밋_후_S3_파일과_함께_삭제한다() {
+            ClubIntroPhoto firstIntroPhoto = ClubIntroPhoto.builder().clubIntroPhotoS3Key("intro-1.jpg").build();
+            ClubIntroPhoto emptyIntroPhoto = ClubIntroPhoto.builder().clubIntroPhotoS3Key("").build();
+            ClubIntroPhoto secondIntroPhoto = ClubIntroPhoto.builder().clubIntroPhotoS3Key("intro-2.jpg").build();
+
+            try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class);
+                 MockedStatic<TransactionSynchronizationManager> transactionMocked = mockStatic(TransactionSynchronizationManager.class)) {
                 mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
                 mockAuthentication();
 
                 AdminPwRequest request = new AdminPwRequest(ADMIN_PASSWORD);
                 given(passwordEncoder.matches(ADMIN_PASSWORD, ENCODED_ADMIN_PASSWORD)).willReturn(true);
                 given(clubRepository.findClubIdByClubUUID(clubUUID)).willReturn(Optional.of(1L));
+                given(clubMainPhotoRepository.findS3KeyByClubId(1L)).willReturn(Optional.of("main.jpg"));
+                given(clubIntroPhotoRepository.findByClubIntroClubId(1L))
+                        .willReturn(List.of(firstIntroPhoto, emptyIntroPhoto, secondIntroPhoto));
 
                 adminClubService.deleteClub(clubUUID, request);
 
                 verify(clubRepository).deleteClubAndDependencies(1L);
+                transactionMocked.verify(() -> TransactionSynchronizationManager.registerSynchronization(transactionSynchronizationCaptor.capture()));
+                transactionSynchronizationCaptor.getValue().afterCommit();
+                verify(s3FileUploadService).deleteFiles(List.of("main.jpg", "intro-1.jpg", "intro-2.jpg"));
+            }
+        }
+
+        @Test
+        void 삭제할_S3_키가_없으면_afterCommit을_등록하지_않는다() {
+            ClubIntroPhoto emptyIntroPhoto = ClubIntroPhoto.builder().clubIntroPhotoS3Key("").build();
+            ClubIntroPhoto blankIntroPhoto = ClubIntroPhoto.builder().clubIntroPhotoS3Key("   ").build();
+
+            try (MockedStatic<SecurityContextHolder> mocked = mockStatic(SecurityContextHolder.class);
+                 MockedStatic<TransactionSynchronizationManager> transactionMocked = mockStatic(TransactionSynchronizationManager.class)) {
+                mocked.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+                mockAuthentication();
+
+                AdminPwRequest request = new AdminPwRequest(ADMIN_PASSWORD);
+                given(passwordEncoder.matches(ADMIN_PASSWORD, ENCODED_ADMIN_PASSWORD)).willReturn(true);
+                given(clubRepository.findClubIdByClubUUID(clubUUID)).willReturn(Optional.of(1L));
+                given(clubMainPhotoRepository.findS3KeyByClubId(1L)).willReturn(Optional.of(""));
+                given(clubIntroPhotoRepository.findByClubIntroClubId(1L))
+                        .willReturn(List.of(emptyIntroPhoto, blankIntroPhoto));
+
+                adminClubService.deleteClub(clubUUID, request);
+
+                verify(clubRepository).deleteClubAndDependencies(1L);
+                transactionMocked.verifyNoInteractions();
+                verify(s3FileUploadService, org.mockito.Mockito.never()).deleteFiles(any());
             }
         }
 
