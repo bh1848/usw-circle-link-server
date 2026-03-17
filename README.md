@@ -66,8 +66,6 @@
 |------|------|-----------|
 | 일일 활성 사용자 (출시 당일) | 249명 | 2025.10.30 |
 | 누적 가입자 수 | 498명 | 2025.10.30 |
-| 주간 활성 사용자 | 618명 | 2025.11 첫째 주 |
-| 월간 활성 사용자 | 772명 | 2025.11 |
 
 > 동아리 연합회 측으로부터 "기존 수기 확인 방식보다 원활하게 진행됐다"는 평가를 받았고 다수 동아리 회장으로부터 "기존 문제점이 잘 해결됐다"는 피드백을 받았습니다.  
 
@@ -78,7 +76,7 @@
 ### Backend
 | 기술 | 선택 이유 |
 |------|-----------|
-| Spring Boot 3.3.1 | 검증된 생태계와 자동 설정으로 빠른 개발이 가능하고 Spring Security 통합이 용이 |
+| Spring Boot 3.3.1 | Spring Security·Data JPA·트랜잭션 추상화가 일관되게 통합되어 있어 역할별 인증 분리, 벌크 연산, afterCommit() 패턴을 별도 설정 없이 조합할 수 있었음 |
 | Spring Security | 필터 기반 인증 체계를 역할별로 분리하기 위한 표준 프레임워크 |
 | Spring Data JPA | 도메인 중심 설계와 JPQL 벌크 연산을 혼용해 유지보수성과 성능을 균형 있게 확보 |
 
@@ -114,8 +112,17 @@
 ### 서버 구성도
 ![Server Architecture](./docs/images/circle_link_arch.png)
 
+- Prod·Test 환경을 EC2 인스턴스로 분리해 운영하며 각각 독립된 S3 버킷과 RDS를 사용
+- 클라이언트(PC·Mobile) → CloudFront → S3 → EC2(Nginx) 순으로 트래픽이 흐르며 Nginx가 리버스 프록시와 SSL 터미네이션을 담당
+- EC2에 IAM 역할을 부여해 액세스 키 없이 S3에 접근하도록 구성
+- Redis는 EC2 내에서 Refresh Token 저장소와 Rate Limiter 상태 관리에 사용
+
 ### ERD
 ![ERD](./docs/images/circle_link_erd.png)
+
+- Club이 중심 엔티티로, ClubIntro·ClubMainPhoto·ClubIntroPhoto·ClubMembers·ClubApplication이 Club에 연결되는 구조
+- User와 Profile을 1:1로 분리해 인증 정보(User)와 프로필 정보(Profile)의 책임을 구분
+- ClubApplication이 Profile과 Club을 잇는 다대일 구조로 지원서 중복을 DB 유니크 제약으로 보장
 
 ### API 명세서
 - [[모바일(User) API]](https://documenter.getpostman.com/view/36800939/2sA3s1nrcY)
@@ -129,7 +136,6 @@
 
 ### 인증/인가 구조
 
-**설계 의도:** User·Leader·Admin 세 역할의 인증 흐름을 공통화하되 역할별 조회 책임은 분리해 OCP를 준수했습니다.
 ```
 RoleBasedUserDetailsService (interface)
 ├── CustomUserDetailsService    → Role.USER
@@ -146,49 +152,35 @@ UserDetailsServiceManager
 
 ### 동아리 관련 기능
 
-**설계 의도:** 동아리 목록 조회 시 N+1 문제를 방지하고 쿼리 수 최소화를 중심으로 설계했습니다.
-
-- 동아리 목록 조회 시 메인 사진·해시태그를 동아리별 개별 조회하던 방식을 `findByClubIds()`로 일괄 조회해 쿼리 수 N+1 → 2로 감소
-- 동아리 목록에서 회원 수·리더를 개별 조회하던 방식을 단일 집계 JPQL로 통합해 페이지당 동아리 10개 기준 21번 → 1번으로 쿼리 수 감소
+- 동아리 목록 조회 시 메인 사진·해시태그를 `findByClubIds()`로 일괄 조회해 쿼리 수 N+1 → 2로 감소
+- 동아리 목록에서 회원 수·리더를 단일 집계 JPQL로 통합해 페이지당 동아리 10개 기준 21번 → 1번으로 쿼리 수 감소
 
 ### 지원서 기능
 
-**설계 의도:** 애플리케이션 레벨 검증만으로는 동시성 문제를 완전히 막을 수 없어 DB 레벨 보장을 추가했습니다.
-
 - `ClubApplication` 엔티티에 `(profile_id, club_id)` 복합 유니크 제약 추가
 - `saveAndFlush()`로 커밋 전 즉시 플러시 → `DataIntegrityViolationException`을 `ALREADY_APPLIED`로 변환
-- 비관적 락·Redis 분산 락은 서비스 규모 대비 복잡도가 과하다고 판단해 미채택
 
 ### 공지 기능
 
-**설계 의도:** 공지사항 수정·삭제 시 S3 파일과 DB 간 불일치를 방지하는 것을 중심으로 설계했습니다.
-
 - 공지사항 CRUD — 제목·내용·사진 생성·수정·삭제
-- 사진 삭제 시 `TransactionSynchronizationManager.registerSynchronization().afterCommit()`으로 DB 커밋 이후에만 S3 삭제 실행해 불일치 방지
+- 사진 삭제 시 `afterCommit()`으로 DB 커밋 이후에만 S3 삭제 실행
 - 사진 순서(`order`) 기반 정렬로 업로드 순서 보장
 
 ### 동아리 연합회(관리자) 기능
 
-**설계 의도:** 동아리 생성·삭제·카테고리 관리 등 운영에 필요한 기능을 Admin 전용으로 분리했습니다.
-
 - 동아리 생성 시 Club·Leader·ClubIntro·ClubMainPhoto·ClubIntroPhoto 기본 데이터 일괄 생성
-- 동아리 삭제 시 `deleteClubAndDependencies()` — JPQL 벌크 DELETE로 연관 테이블 9개를 테이블당 쿼리 1개로 처리, 삭제 소요 시간 206ms → 111ms (약 46% 개선)
-- `TransactionSynchronizationManager.registerSynchronization().afterCommit()` — DB 커밋 이후에만 S3 삭제 실행해 두 저장소 간 불일치 방지
+- 동아리 삭제 시 JPQL 벌크 DELETE로 연관 테이블 9개를 테이블당 쿼리 1개로 처리, 삭제 소요 시간 206ms → 111ms (약 46% 개선)
+- `afterCommit()`으로 DB 커밋 이후에만 S3 삭제 실행해 두 저장소 간 불일치 방지
 - 동아리 카테고리 CRUD
 - 층별 사진 업로드·조회·삭제
 
 ### 파일 업로드 검증
 
-**설계 의도:** 확장자 스푸핑으로 악성 파일이 S3에 업로드되는 문제를 서버에서 원천 차단합니다.
-
-- `FileSignatureValidator` — `@Component`로 분리해 `S3FileUploadService`에 주입, 확장자 정책 변경 시 서비스 코드를 건드리지 않아도 되는 구조
-- 파일 매직 바이트를 직접 읽어 확장자와 실제 포맷 일치 여부 검증
-- PNG는 스펙에서 정의한 8바이트 시그니처 전체 검증
+- `FileSignatureValidator` — `@Component`로 분리해 `S3FileUploadService`·`ClubLeaderService`에 주입
+- 파일 매직 바이트를 직접 읽어 확장자와 실제 포맷 일치 여부 검증, PNG는 스펙 기준 8바이트 시그니처 전체 검증
 - S3 업로드는 Presigned URL 방식으로 처리해 파일 트래픽이 서버를 경유하지 않음
 
 ### 입력 검증 및 정제
-
-**설계 의도:** 검증 로직을 서비스 계층에서 분리해 재사용성을 높이고 XSS를 선언적으로 방어합니다.
 
 - `@ValidClubRoomNumber` — 유효한 동아리방 번호 집합과 정규식을 결합한 커스텀 검증
 - `@Sanitize` + `SanitizationBinder` — `@RequestBody`·`@RequestPart`·`WebDataBinder` 경로를 모두 커버하며 `@Sanitize`가 붙은 필드에만 선택적으로 Jsoup 정제 적용, `List<String>` 같은 컬렉션 필드도 원소 단위로 정제
@@ -221,8 +213,6 @@ UserDetailsServiceManager
 
 ### 공통 예외 처리
 
-**설계 의도:** `GlobalExceptionHandler`에서 4xx/5xx를 구분해 운영 환경에서는 4xx 로그를 생략하고 예외 응답 구조를 통일합니다.
-
 - `ApiResponse<T>` — 성공 응답 구조를 `message`·`data` 필드로 통일, `data`는 `@JsonInclude(NON_NULL)`로 null 시 미포함
 - `@RestControllerAdvice`로 전역 예외를 한 곳에서 처리
 - 운영 프로파일(`prod`)에서는 4xx 클라이언트 에러 로그를 출력하지 않아 노이즈 감소
@@ -247,7 +237,8 @@ UserDetailsServiceManager
 
 ### 테스트 전략
 
-**단위 테스트(Service):** 외부 의존성을 Mockito로 모킹해 비즈니스 로직에만 집중합니다. `MockedStatic`으로 `SecurityContextHolder`를 격리해 인증 컨텍스트를 제어합니다.  
+#### 단위 테스트(Service)
+외부 의존성을 Mockito로 모킹해 비즈니스 로직에만 집중합니다. `MockedStatic`으로 `SecurityContextHolder`를 격리해 인증 컨텍스트를 제어합니다.
 
 ```java
 // 예: 동시성 - DB 유니크 제약 위반을 도메인 예외로 변환
@@ -260,18 +251,26 @@ assertThatThrownBy(() -> service.submitClubApplication(clubUUID))
     .isEqualTo(ExceptionType.ALREADY_APPLIED);
 ```
 
-**통합 테스트(Repository):** `@DataJpaTest`로 실제 JPA 쿼리를 검증합니다. `deleteClubAndDependencies()` 테스트에서는 `MockedStatic<TransactionSynchronizationManager>`를 활용해 `afterCommit()` 콜백 등록 여부와 S3 삭제 호출 순서를 분리 검증합니다.  
+#### 통합 테스트(Repository)
+`@DataJpaTest`로 실제 JPA 쿼리를 검증합니다. `deleteClubAndDependencies()` 테스트에서는 `MockedStatic<TransactionSynchronizationManager>`를 활용해 `afterCommit()` 콜백 등록 여부와 S3 삭제 호출 순서를 분리 검증합니다.
 
 ```java
 // 예: 커밋 후 S3 삭제 보장 검증
 mocked.verify(() -> TransactionSynchronizationManager
     .registerSynchronization(synchronizationCaptor.capture()));
 
-synchronizationCaptor.getValue().afterCommit();  // 직접 afterCommit 트리거
-then(s3FileUploadService).should().deleteFiles(List.of(INTRO_S3_KEY, MAIN_S3_KEY));
+// 커밋 전에는 S3 삭제가 실행되지 않아야 한다
+then(s3FileUploadService).shouldHaveNoInteractions();
+
+// afterCommit 직접 트리거 → 이때만 S3 삭제 실행
+synchronizationCaptor.getValue().afterCommit();
+then(s3FileUploadService).should().deleteFiles(anyList());
 ```
 
-**슬라이스 테스트(Controller):** `@WebMvcTest` + `addFilters = false`로 Security 필터를 제거하고 HTTP 레이어만 검증합니다. MockMvc로 상태코드, 응답 JSON 구조, 예외 코드를 단언합니다.  
+`shouldHaveNoInteractions()`로 커밋 전 S3 삭제가 없음을 먼저 확인하고 `afterCommit()`을 직접 트리거한 뒤 `deleteFiles()`가 호출되는 순서를 검증합니다.
+
+#### 슬라이스 테스트(Controller)
+`@WebMvcTest` + `addFilters = false`로 Security 필터를 제거하고 HTTP 레이어만 검증합니다. MockMvc로 상태코드, 응답 JSON 구조, 예외 코드를 단언합니다.
 
 ```java
 mockMvc.perform(get("/apply/can-apply/{clubUUID}", clubUUID))
@@ -280,7 +279,8 @@ mockMvc.perform(get("/apply/can-apply/{clubUUID}", clubUUID))
     .andExpect(jsonPath("$.data").doesNotExist());
 ```
 
-**Security 테스트:** 유효·만료·변조 토큰 세 케이스를 각각 검증하고 JwtFilter에서 각 케이스에 따라 `CustomAuthenticationEntryPoint`가 올바른 에러 코드로 호출되는지 `ArgumentCaptor`로 확인합니다.  
+#### Security 테스트
+유효·만료·변조 토큰 세 케이스를 각각 검증하고 JwtFilter에서 각 케이스에 따라 `CustomAuthenticationEntryPoint`가 올바른 에러 코드로 호출되는지 `ArgumentCaptor`로 확인합니다.
 
 ---
 
