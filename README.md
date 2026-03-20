@@ -141,7 +141,7 @@ RoleBasedUserDetailsService (interface)
 ├── CustomUserDetailsService    → Role.USER
 ├── CustomLeaderDetailsService  → Role.LEADER
 └── CustomAdminDetailsService   → Role.ADMIN
-
+ 
 UserDetailsServiceManager
 └── EnumMap<Role, RoleBasedUserDetailsService>  → O(1) 조회
 ```
@@ -166,17 +166,16 @@ UserDetailsServiceManager
 
 ### 공지 기능
 
-- 공지사항 CRUD — 제목·내용·사진 생성·수정·삭제
+- 공지사항 CRUD (제목·내용·사진)
 - 사진 삭제 시 `afterCommit()`으로 DB 커밋 이후에만 S3 삭제 실행
-- 사진 순서(`order`) 기반 정렬로 업로드 순서 보장
+- 사진 순서(`order`) 필드로 업로드 순서 보장
 
 ### 동아리 연합회(관리자) 기능
 
 - 동아리 생성 시 Club·Leader·ClubIntro·ClubMainPhoto·ClubIntroPhoto 기본 데이터 일괄 생성
-- 동아리 삭제 시 JPQL 벌크 DELETE로 연관 테이블 9개를 테이블당 쿼리 1개로 처리, 삭제 소요 시간 206ms → 111ms (약 46% 개선)
+- 동아리 삭제 시 JPQL 벌크 DELETE로 연관 테이블 9개를 테이블당 쿼리 1개로 처리 (265ms → 116ms, 약 56% 개선, 로컬 MySQL 기준)
 - `afterCommit()`으로 DB 커밋 이후에만 S3 삭제 실행해 두 저장소 간 불일치 방지
-- 동아리 카테고리 CRUD
-- 층별 사진 업로드·조회·삭제
+- 동아리 카테고리 CRUD, 층별 사진 업로드·조회·삭제
 
 ### 파일 업로드 검증
 
@@ -189,31 +188,10 @@ UserDetailsServiceManager
 - `@ValidClubRoomNumber` — 유효한 동아리방 번호 집합과 정규식을 결합한 커스텀 검증
 - `@Sanitize` + `SanitizationBinder` — `@RequestBody`·`@RequestPart`·`WebDataBinder` 경로를 모두 커버하며 `@Sanitize`가 붙은 필드에만 선택적으로 Jsoup 정제 적용, `List<String>` 같은 컬렉션 필드도 원소 단위로 정제
 
-#### @Sanitize 적용 기준
-
 | 구분 | 대상 |
 |------|------|
 | 적용 | 화면에 노출되는 자유 서술형 필드 (제목·본문·소개·이름·해시태그·카테고리명 등) |
 | 비적용 | 비밀번호·토큰·UUID·이메일·학번·전화번호·계정 ID·URL·enum·숫자 등 정형 필드 |
-
-##### 적용 필드 목록
-
-| DTO | 적용 필드 |
-|-----|-----------|
-| AdminNoticeCreationRequest | noticeTitle, noticeContent |
-| AdminNoticeUpdateRequest | noticeTitle, noticeContent |
-| AdminClubCategoryCreationRequest | clubCategoryName |
-| AdminClubCreationRequest | clubName |
-| ClubIntroRequest | clubIntro, clubRecruitment |
-| ClubInfoRequest | leaderName, clubHashtag, clubCategoryName |
-| SignUpRequest | userName, major |
-| ExistingMemberSignUpRequest | userName, major |
-| ProfileRequest | userName, major |
-| DuplicationProfileRequest | userName |
-| ClubMembersAddFromExcelRequest | userName, major |
-| ClubNonMemberUpdateRequest | userName, major |
-| ClubMemberProfileRequest | userName, major |
-| DuplicateProfileMemberRequest | userName |
 
 ### 공통 예외 처리
 
