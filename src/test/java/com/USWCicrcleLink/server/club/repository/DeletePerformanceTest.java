@@ -26,11 +26,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -44,10 +45,12 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * 동아리 삭제 방식 변경 전/후 성능 비교 테스트.
- * H2 인메모리 환경 기준이며 실제 성능 검증용이 아닌 방향성 확인 목적.
- * 측정 결과: 변경 전 206ms → 변경 후 111ms (약 46% 개선)
+ * local 프로필의 MySQL 환경 기준으로 실행한다.
+ * @DataJpaTest의 기본 embedded DB 교체를 비활성화해 실제 로컬 MySQL에서 비교한다.
  */
 @DataJpaTest
+@ActiveProfiles("local")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class DeletePerformanceTest {
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -493,9 +496,6 @@ class DeletePerformanceTest {
             System.out.printf(" [변경 후] JPQL 벌크 DELETE              : %4d ms%n", afterElapsed);
             System.out.println("-------------------------------------------------");
             System.out.printf(" 차이: %d ms (변경 전 대비 변경 후)%n", beforeElapsed - afterElapsed);
-            System.out.println("=================================================");
-            System.out.println("[비고] H2 인메모리 환경 기준. MySQL 실환경에서는");
-            System.out.println("       네트워크 왕복 비용으로 인해 차이가 더 크게 나타난다.");
             System.out.println("=================================================");
         }
     }
