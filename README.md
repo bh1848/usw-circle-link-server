@@ -164,7 +164,7 @@ UserDetailsServiceManager
 | 항목 | 변경 전 | 변경 후 |
 |------|---------|---------|
 | 메인 사진·해시태그 조회 | 동아리당 개별 조회 (N+1) | `findByClubIds()` 일괄 조회 (2번) |
-| 회원 수·리더 조회 | 페이지당 21번 | 단일 집계 JPQL (1번) |
+| 회원 수·리더 조회 | 페이지당 21번 (목록 1 + 동아리당 회원 수·리더 각 1씩 × 10) | 단일 집계 JPQL (1번) |
 
 ### 지원서 기능
 
@@ -213,12 +213,12 @@ UserDetailsServiceManager
 
 ### 테스트 구성
 
-총 **24개 테스트 클래스**, **195개 테스트 케이스**를 작성했습니다.
+총 **23개 테스트 클래스**, **191개 테스트 케이스**를 작성했습니다.
 
 | 유형 | 클래스 수 | 주요 내용 |
 |------|-----------|-----------|
-| Service (단위) | 6 | Mockito 기반 비즈니스 로직·예외 분기 검증 |
-| Repository (통합) | 5 | `@DataJpaTest` JPQL 커스텀 쿼리·벌크 DELETE 실행 검증 |
+| Service (단위) | 7 | Mockito 기반 비즈니스 로직·예외 분기 검증 |
+| Repository (통합) | 4 | `@DataJpaTest` JPQL 커스텀 쿼리·벌크 DELETE 실행 검증 |
 | Controller (슬라이스) | 3 | `@WebMvcTest` HTTP 상태코드·응답 본문 검증 |
 | Security | 5 | JWT 발급·검증·만료, JwtFilter 동작, RefreshToken 생명주기 |
 | Validator | 3 | 파일 시그니처 검증, 동아리방 번호 유효성, 입력 정제 |
@@ -233,12 +233,12 @@ UserDetailsServiceManager
 ```java
 // 예: 동시성 - DB 유니크 제약 위반을 도메인 예외로 변환
 given(clubApplicationRepository.saveAndFlush(any()))
-    .willThrow(new DataIntegrityViolationException("unique constraint"));
+        .willThrow(new DataIntegrityViolationException("unique constraint"));
 
 assertThatThrownBy(() -> service.submitClubApplication(clubUUID))
-    .isInstanceOf(ClubApplicationException.class)
+        .isInstanceOf(ClubApplicationException.class)
     .extracting(e -> ((ClubApplicationException) e).getExceptionType())
-    .isEqualTo(ExceptionType.ALREADY_APPLIED);
+        .isEqualTo(ExceptionType.ALREADY_APPLIED);
 ```
 
 #### 통합 테스트(Repository)
@@ -248,9 +248,9 @@ assertThatThrownBy(() -> service.submitClubApplication(clubUUID))
 ```java
 // 예: 커밋 후 S3 삭제 보장 검증
 transactionMocked.verify(() -> TransactionSynchronizationManager
-    .registerSynchronization(transactionSynchronizationCaptor.capture()));
+        .registerSynchronization(transactionSynchronizationCaptor.capture()));
 
-transactionSynchronizationCaptor.getValue().afterCommit();
+        transactionSynchronizationCaptor.getValue().afterCommit();
 verify(s3FileUploadService).deleteFiles(List.of("main.jpg", "intro-1.jpg", "intro-2.jpg"));
 ```
 
@@ -262,9 +262,9 @@ verify(s3FileUploadService).deleteFiles(List.of("main.jpg", "intro-1.jpg", "intr
 
 ```java
 mockMvc.perform(get("/apply/can-apply/{clubUUID}", clubUUID))
-    .andExpect(status().isOk())
-    .andExpect(jsonPath("$.message").value("지원 가능"))
-    .andExpect(jsonPath("$.data").doesNotExist());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.message").value("지원 가능"))
+        .andExpect(jsonPath("$.data").doesNotExist());
 ```
 
 #### Security 테스트
