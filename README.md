@@ -22,7 +22,6 @@
 4. [시스템 설계](#4-시스템-설계)
 5. [담당 영역](#5-담당-영역)
 6. [테스트](#6-테스트)
-7. [트러블슈팅](#7-트러블슈팅)
 
 ---
 
@@ -270,88 +269,3 @@ mockMvc.perform(get("/apply/can-apply/{clubUUID}", clubUUID))
 #### Security 테스트
 
 유효·만료·변조 토큰 세 케이스를 각각 검증하고 JwtFilter에서 각 케이스에 따라 `CustomAuthenticationEntryPoint`가 올바른 에러 코드로 호출되는지 `ArgumentCaptor`로 확인합니다.
-
----
-
-## 7. 트러블슈팅
-
-### 7-1. 동아리 삭제 최적화와 S3 스토리지 누수 방지 · [블로그](https://velog.io/@bh1848/%EB%8F%99%EC%95%84%EB%A6%AC-%EC%82%AD%EC%A0%9C-%EC%B5%9C%EC%A0%81%ED%99%94%EC%99%80-S3-%EC%8A%A4%ED%86%A0%EB%A6%AC%EC%A7%80-%EB%88%84%EC%88%98-%EB%B0%A9%EC%A7%80)
-
-**Situation**
-- 동아리 삭제 시 9개 연관 테이블을 레포지토리별로 개별 삭제
-- JPA `deleteAll()`은 건별 DELETE라 데이터가 많아질수록 쿼리 수가 선형 증가
-- S3 삭제가 트랜잭션 밖에서 실행돼 DB와 불일치 가능
-
-**Action**
-- JPQL 벌크 DELETE로 연관 테이블을 테이블당 쿼리 1개로 처리
-- `TransactionSynchronizationManager`의 `afterCommit()`으로 트랜잭션 커밋 이후에만 S3 삭제 실행, 롤백 시 S3 삭제 미실행
-- 공지사항 삭제 로직에도 동일 적용
-
-**Result**
-
-| 항목 | 변경 전 | 변경 후 |
-|------|---------|---------|
-| 삭제 쿼리 수 | 테이블당 N개 | 테이블당 1개 |
-| 삭제 소요 시간 | 265ms | 116ms (약 56% 개선) |
-| S3-DB 불일치 | 발생 가능 | 커밋 후 S3 삭제 보장 |
-
-로컬 MySQL / 회원 10명·지원자 5명·소개사진 5장 기준
-
----
-
-### 7-2. 파일 업로드 검증 강화와 매직 바이트 도입 · [블로그](https://velog.io/@bh1848/%ED%8C%8C%EC%9D%BC-%EC%97%85%EB%A1%9C%EB%93%9C-%EA%B2%80%EC%A6%9D-%EA%B0%95%ED%99%94%EC%99%80-%EB%A7%A4%EC%A7%81-%EB%B0%94%EC%9D%B4%ED%8A%B8-%EB%8F%84%EC%9E%85)
-
-**Situation**
-- 파일명 기반 확장자 검사만으로는 실제 파일 포맷 보장 불가
-- 실제 포맷과 확장자가 다른 파일을 올려도 S3 업로드 성공, 클라이언트에서 이미지 미표시
-- Content-Type 헤더는 클라이언트가 임의로 설정 가능
-
-**Action**
-- `FileSignatureValidator`를 별도 클래스로 분리, `InputStream`에서 바이트를 직접 읽어 확장자별 시그니처와 비교
-- 확장자 검사 후 시그니처 검사 추가 실행
-- static 유틸에서 `@Component`로 전환해 생성자 주입 (Mockito 모킹 가능하도록)
-
-**Result**
-- 이미지 표시 문제 해결, 확장자 스푸핑을 통한 악성 파일 업로드 차단
-- 매직 바이트 검사 오버헤드 0.008ms (워밍업 100회 후 1000회 평균 기준)
-
----
-
-### 7-3. JPA saveAndFlush와 DB 유니크 제약으로 동시성 문제 해결 · [블로그](https://velog.io/@bh1848/%EC%A7%80%EC%9B%90%EC%84%9C-%EC%A4%91%EB%B3%B5-%EC%A0%9C%EC%B6%9C%EA%B3%BC-%EA%B2%BD%EC%9F%81-%EC%83%81%ED%83%9C-%EC%B2%98%EB%A6%AC)
-
-**Situation**
-- `checkIfCanApply()`(readOnly 트랜잭션)와 `submitClubApplication()`이 별도 트랜잭션으로 분리된 구조
-- 두 메서드 사이에 동시 요청이 들어오면 둘 다 검증을 통과해 중복 지원서 저장 가능
-- `ClubApplication` 엔티티에 `profile + club` 조합의 유니크 제약 없음
-
-**Action**
-- `ClubApplication` 엔티티에 `(profile_id, club_id)` 복합 유니크 제약 추가
-- `save()` 대신 `saveAndFlush()`로 즉시 플러시, `DataIntegrityViolationException`을 `try-catch` 안에서 `ALREADY_APPLIED`로 변환
-- 전화번호·학번 중복 검사 루프 2개 → 1개로 통합
-
-**Result**
-- 동시 요청 중 DB 유니크 제약에 걸린 쪽은 `ALREADY_APPLIED`로 변환, 클라이언트 일관된 에러 응답
-- 중복 검사 비교 횟수 절반으로 감소
-
----
-
-### 7-4. Spring Security UserDetailsService 분리와 JWT Access Token 설계 · [블로그](https://velog.io/@bh1848/Spring-Security-UserDetailsService-%EB%B6%84%EB%A6%AC%EC%99%80-JWT-Access-Token-%EC%84%A4%EA%B3%84)
-
-**Situation**
-- User·Leader·Admin 세 역할의 인증 대상 조회가 단일 메서드 분기로 처리, 역할 추가 시마다 해당 메서드 수정 필요
-- Access Token에 `role`이 없어 토큰 검증 후에도 필터에서 역할을 다시 판단
-- 인증 필터에 역할 판단 로직이 끼어들어 책임 불명확
-
-**Action**
-- `RoleBasedUserDetailsService` 인터페이스 정의, 역할별 구현체로 분리
-- `UserDetailsServiceManager`가 `EnumMap`으로 역할에 맞는 구현체를 O(1)로 선택
-- Access Token에 `role` claim 추가, 토큰 검증 직후 인증 대상 확정, `JwtFilter`에서 역할 판단 로직 제거
-- Refresh Token을 `RefreshTokenStore`(Redis 읽기·쓰기) / `RefreshTokenCookieService`(쿠키 처리) / `RefreshTokenService`(발급·검증·재발급) 세 클래스로 분리
-
-**Result**
-
-| 항목 | 변경 전 | 변경 후 |
-|------|---------|---------|
-| 인증 대상 확정 시점 | 토큰 검증 후 역할 재확인 | 토큰 검증 직후 확정 |
-| 역할별 조회 책임 | 단일 메서드 분기 | 구현체별 분리 (OCP 준수) |
-| Refresh Token 책임 | 단일 클래스 집중 | Store / Cookie / Service 분리 |
